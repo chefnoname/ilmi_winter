@@ -1,31 +1,34 @@
-# The Winter Lock-In
+# Winter webinar sign-up page
 
-Standalone sign-up page for the free live session on Wednesday 9 December 2026, 7pm UK.
-Built for paid Meta traffic. Static files and one small function, no build step.
+Standalone site for the free winter webinar on Wednesday 9 December 2026, 7pm UK, used for paid Meta traffic.
+It is a like-for-like copy of ilmi.online/winter: the same design, wording and features. One page and one
+small function, no build step.
 
 | File | What it is |
 |---|---|
-| `index.html` | The page |
-| `styles.css` | Styles |
-| `config.js` | Settings: date, links, Meta pixel id and the hosts the pixel may load on |
-| `app.js` | Form, thank-you state, calendar links |
-| `privacy.html` | Privacy notice (served at `/privacy`) |
+| `index.html` | The whole page: styles, markup and script. Settings are in the `CONFIG` block near the bottom |
+| `images/` | Ilmi logo, the calligraphy background tile and the teacher's photo |
 | `api/register.js` | Saves a sign-up (Vercel function) |
 | `test/register.test.js` | Tests for the function: `npm test` |
+| `tools/make-copy.py` | Rebuilds `index.html` from the old page. It lists every difference from ilmi.online/winter |
+
+## What differs from ilmi.online/winter
+
+Only these: the date (9 December), the Meta pixel, the sign-up endpoint (`/api/register`), the page
+description and share title in `<head>`, and the logo and background tile being served as small SVG files.
 
 ## How a sign-up is saved
 
-The form posts to `/api/register`. The function checks the details and tidies the WhatsApp number, then either:
+The form posts to `/api/register`. The function checks the details, tidies the WhatsApp number to the
+country code with no plus (447...), creates or updates the lead in Chakra and adds the number to the
+"Winter webinar 2026" campaign, which sends the confirmation and the reminders.
 
-1. passes the sign-up to the main site's endpoint (`REGISTER_FORWARD_URL`), which holds the Chakra key, or
-2. talks to Chakra directly, if `CHAKRA_API_KEY` and `CHAKRA_WINTER_CAMPAIGN_ID` are set on this project.
-
-Set these in Vercel under Settings, Environment Variables. See `.env.example`. Never commit a real key.
+Set the variables from `.env.example` in Vercel under Settings, Environment Variables. Never commit a real key.
 
 ## Meta pixel
 
-`config.js` loads the pixel (PageView) only on the hosts in `pixelHosts`. `app.js` sends the `Lead`
-event once the sign-up has been saved, so failed or invalid submissions are never counted.
+The snippet in `<head>` loads the pixel (PageView) on the live site only, not on a local copy or a Vercel preview link. The form sends
+the `Lead` event once the sign-up has been saved, so failed or invalid submissions are never counted.
 
 ## Deploy
 

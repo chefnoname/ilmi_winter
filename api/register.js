@@ -1,14 +1,15 @@
 /**
  * POST /api/register
- * Sign-ups from The Winter Lock-In page. Checks the details, tidies the WhatsApp number
+ * Sign-ups from the winter webinar page. Checks the details, tidies the WhatsApp number
  * (country code, digits only, e.g. 447700900123) and saves the sign-up in Chakra.
  *
- * Body: { first_name, email, whatsapp, source?, website? }
+ * Body: { first_name, email, whatsapp, trial_interest?, source?, website? }
  * `website` is a hidden honeypot field: bots fill it in, people don't.
  *
  * Two ways to reach Chakra, chosen by the environment variables set in Vercel:
  *   1. Direct: CHAKRA_API_KEY + CHAKRA_WINTER_CAMPAIGN_ID are set on this project.
- *      Optional CHAKRA_ATTR_EVENT, CHAKRA_ATTR_SOURCE = keys of the custom lead attributes.
+ *      Optional CHAKRA_ATTR_EVENT, CHAKRA_ATTR_TRIAL, CHAKRA_ATTR_SOURCE = keys of the custom
+ *      lead attributes for event, trial_interest and source.
  *   2. Forward: REGISTER_FORWARD_URL is set. The sign-up is passed, server to server, to the
  *      main site's sign-up endpoint, which already holds the Chakra key. Nothing secret is
  *      needed on this project and the Chakra logic lives in one place.
@@ -17,7 +18,8 @@
 
 const MAX_BODY_BYTES = 2048;
 const EVENT = "winter-webinar-2026";
-const DEFAULT_SOURCE = "winterlockin";
+const DEFAULT_SOURCE = "direct";
+const TRIAL_ANSWERS = new Set(["Yes", "Maybe", "No"]);
 const CHAKRA = "https://api.chakrahq.com/v1/ext/procedure";
 
 const json = (body, status = 200) =>
@@ -50,6 +52,7 @@ async function sendToChakra(p, env) {
   const key = env.CHAKRA_API_KEY;
   const data = { name: p.first_name, phone_number: p.phone, email: p.email };
   if (env.CHAKRA_ATTR_EVENT) data[env.CHAKRA_ATTR_EVENT] = p.event;
+  if (env.CHAKRA_ATTR_TRIAL && p.trial_interest) data[env.CHAKRA_ATTR_TRIAL] = p.trial_interest;
   if (env.CHAKRA_ATTR_SOURCE) data[env.CHAKRA_ATTR_SOURCE] = p.source;
 
   const lead = await post(`${CHAKRA}/lead/process`, { data }, key);
@@ -69,6 +72,7 @@ async function forward(p, url) {
     first_name: p.first_name,
     email: p.email,
     whatsapp: `+${p.phone}`,
+    trial_interest: p.trial_interest,
     source: p.source,
   });
   if (!res.ok) throw new Error(`Forward returned ${res.status}`);
@@ -101,13 +105,21 @@ async function handler(req) {
   const firstName = str(raw.first_name, 60);
   const email = str(raw.email, 120).toLowerCase();
   const phone = normalisePhone(str(raw.whatsapp, 40));
+  const trial = str(raw.trial_interest, 10);
   const source = str(raw.source, 60).replace(/[^\w.-]/g, "") || DEFAULT_SOURCE;
 
   if (!firstName) return json({ error: "First name is required" }, 400);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return json({ error: "Email is not valid" }, 400);
   if (!phone) return json({ error: "WhatsApp number is not valid" }, 400);
 
-  const payload = { event: EVENT, first_name: firstName, email, phone, source };
+  const payload = {
+    event: EVENT,
+    first_name: firstName,
+    email,
+    phone,
+    trial_interest: TRIAL_ANSWERS.has(trial) ? trial : "",
+    source,
+  };
 
   const env = process.env;
   try {

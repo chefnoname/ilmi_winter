@@ -21,7 +21,7 @@ before(async () => {
 after(() => server.close());
 beforeEach(() => {
   hits = []; nextStatus = 200;
-  for (const k of ["CHAKRA_API_KEY", "CHAKRA_WINTER_CAMPAIGN_ID", "CHAKRA_ATTR_EVENT", "CHAKRA_ATTR_SOURCE", "REGISTER_FORWARD_URL"]) delete process.env[k];
+  for (const k of ["CHAKRA_API_KEY", "CHAKRA_WINTER_CAMPAIGN_ID", "CHAKRA_ATTR_EVENT", "CHAKRA_ATTR_TRIAL", "CHAKRA_ATTR_SOURCE", "REGISTER_FORWARD_URL"]) delete process.env[k];
 });
 
 const call = (body, method = "POST") =>
@@ -29,7 +29,7 @@ const call = (body, method = "POST") =>
     method, headers: { "Content-Type": "application/json" },
     body: method === "POST" ? (typeof body === "string" ? body : JSON.stringify(body)) : undefined,
   }));
-const good = { first_name: " Amina ", email: "Amina@Example.com", whatsapp: "07700 900123", source: "meta" };
+const good = { first_name: " Amina ", email: "Amina@Example.com", whatsapp: "07700 900123", trial_interest: "Maybe", source: "meta" };
 
 test("phone numbers are tidied to country code + digits", () => {
   assert.equal(normalisePhone("+44 7700 900123"), "447700900123");
@@ -44,14 +44,14 @@ test("forwards a valid sign-up to the main site", async () => {
   const res = await call(good);
   assert.equal(res.status, 200);
   assert.equal(hits.length, 1);
-  assert.deepEqual(hits[0].body, { first_name: "Amina", email: "amina@example.com", whatsapp: "+447700900123", source: "meta" });
+  assert.deepEqual(hits[0].body, { first_name: "Amina", email: "amina@example.com", whatsapp: "+447700900123", trial_interest: "Maybe", source: "meta" });
   assert.equal(hits[0].auth, undefined);
 });
 
 test("uses a default source when none is given", async () => {
   process.env.REGISTER_FORWARD_URL = `${base}/x`;
   await call({ ...good, source: "" });
-  assert.equal(hits[0].body.source, "winterlockin");
+  assert.equal(hits[0].body.source, "direct");
 });
 
 test("shows an error to the visitor when the save fails", async () => {
@@ -64,6 +64,7 @@ test("goes straight to Chakra when this project has its own key", async (t) => {
   process.env.CHAKRA_API_KEY = "test-key";
   process.env.CHAKRA_WINTER_CAMPAIGN_ID = "camp-1";
   process.env.CHAKRA_ATTR_EVENT = "event";
+  process.env.CHAKRA_ATTR_TRIAL = "trial_interest";
   process.env.CHAKRA_ATTR_SOURCE = "source";
   process.env.REGISTER_FORWARD_URL = `${base}/should-not-be-used`;
   const realFetch = globalThis.fetch;
@@ -73,7 +74,7 @@ test("goes straight to Chakra when this project has its own key", async (t) => {
   assert.equal(res.status, 200);
   assert.deepEqual(hits.map(h => h.url), ["/v1/ext/procedure/lead/process", "/v1/ext/procedure/lead/add-phone-number-to-campaign"]);
   assert.equal(hits[0].auth, "Bearer test-key");
-  assert.deepEqual(hits[0].body, { data: { name: "Amina", phone_number: "447700900123", email: "amina@example.com", event: "winter-webinar-2026", source: "meta" } });
+  assert.deepEqual(hits[0].body, { data: { name: "Amina", phone_number: "447700900123", email: "amina@example.com", event: "winter-webinar-2026", trial_interest: "Maybe", source: "meta" } });
   assert.deepEqual(hits[1].body, { campaignId: "camp-1", phoneNumber: "447700900123" });
 });
 
@@ -97,4 +98,10 @@ test("honeypot: bots get a fake success and nothing is saved", async () => {
 
 test("says so when nothing is configured", async () => {
   assert.equal((await call(good)).status, 503);
+});
+
+test("ignores a trial answer that isn't Yes, Maybe or No", async () => {
+  process.env.REGISTER_FORWARD_URL = `${base}/x`;
+  await call({ ...good, trial_interest: "<script>" });
+  assert.equal(hits[0].body.trial_interest, "");
 });

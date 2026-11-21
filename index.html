@@ -4,55 +4,350 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <!--
-    The Winter Lock-In: standalone sign-up page for the free live session (paid Meta traffic).
-    Static files, no build step: styles.css, config.js (date, links, pixel) and app.js.
-    Sign-ups post to /api/register (see api/register.js).
+    Free winter webinar registration page, on its own site. It is a like-for-like copy of
+    ilmi.online/winter: the same design, wording and features. Only the date, the Meta pixel,
+    the sign-up endpoint and the page description differ. One file, no build step.
+    Settings (date, links) are in the CONFIG block near the bottom of this file.
   -->
-  <title>The Winter Lock-In | Free live session before Ramadan</title>
-  <meta name="description" content="Short days, long nights, fewer distractions. A free 60-minute live session on three winter habits to lock in before Ramadan. Wednesday 9 December, 7pm UK." />
+  <title>Free Webinar: The Winter Before Ramadan | Ilmi Online</title>
+  <meta name="description" content="Your Ramadan starts in winter. A free live webinar with Yasin Munye on 3 winter habits to start before Ramadan arrives." />
   <meta name="robots" content="index, follow" />
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
   <meta name="theme-color" content="#0E1A2B" />
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="The Winter Lock-In" />
+  <meta property="og:site_name" content="Ilmi" />
   <meta property="og:locale" content="en_GB" />
-  <meta property="og:title" content="The Winter Lock-In: a free live session before Ramadan" />
-  <meta property="og:description" content="Short days, long nights, fewer distractions. One free hour on three winter habits to lock in before Ramadan. Wednesday 9 December, 7pm UK." />
+  <meta property="og:title" content="The Winter Before Ramadan: Free Live Webinar" />
+  <meta property="og:description" content="Your Ramadan starts in winter. A free live webinar with Yasin Munye on 3 winter habits to start before Ramadan arrives." />
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="The Winter Lock-In: a free live session before Ramadan" />
-  <meta name="twitter:description" content="Short days, long nights, fewer distractions. One free hour on three winter habits to lock in before Ramadan. Wednesday 9 December, 7pm UK." />
+  <meta name="twitter:title" content="The Winter Before Ramadan: Free Live Webinar" />
+  <meta name="twitter:description" content="Your Ramadan starts in winter. A free live webinar with Yasin Munye on 3 winter habits to start before Ramadan arrives." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" />
-  <link rel="stylesheet" href="/styles.css" />
-  <script src="/config.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Poppins:wght@400;500;600;700;800&display=swap" />
+  <script>
+  /* Meta pixel. It loads on the live site only: not on a local copy and not on Vercel preview links.
+     PageView fires here. Lead fires further down, once a sign-up has been saved. */
+  (function(){
+    var PIXEL_ID = "1004320156067073";
+    var host = location.hostname;
+    if (!host || host === "localhost" || host === "127.0.0.1" || /-chefnonames-projects\.vercel\.app$/.test(host)) return;
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', PIXEL_ID);
+    fbq('track', 'PageView');
+  })();
+  </script>
 </head>
 <body>
-<header class="hero">
+<style>
+/* Layout: one narrow column (max 560px) built for phones. A dark winter-night hero, then frost-white sections, with the form card right under the hero. */
+:root{
+  --night:#0E1A2B;      /* winter night: hero, buttons on light */
+  --night-2:#1B2F45;    /* hero gradient lower */
+  --steel:#3D5A73;      /* steel blue: labels, accents */
+  --slate:#5C6B7C;      /* cool gray: secondary text */
+  --frost:#EEF3F7;      /* page background */
+  --snow:#FFFFFF;       /* cards */
+  --ice:#BFDDF2;        /* CTA on dark, highlights */
+  --ice-soft:#DCEBF6;
+  --mist:#CFDAE4;       /* borders */
+  --ink:#122033;        /* body text on light */
+  --flag:#8A5A00; --flag-bg:#FFF1CC;
+  --font:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+html{scroll-behavior:smooth}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--frost);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.6;margin:0;-webkit-font-smoothing:antialiased}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+h1,h2,h3{line-height:1.15;text-wrap:balance;margin:0}
+p{margin:0}
+a{color:var(--steel)}
+:focus-visible{outline:3px solid var(--ice);outline-offset:3px;border-radius:6px}
+
+/* draft bar */
+.draft{background:var(--flag-bg);color:var(--flag);font-size:13px;font-weight:500}
+.draft .wrap{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding-block:10px}
+.draft button{font:inherit;font-weight:600;border:1px solid var(--flag);background:transparent;color:var(--flag);border-radius:99px;padding:4px 12px;min-height:32px;cursor:pointer}
+.draft button[aria-pressed="true"]{background:var(--flag);color:var(--flag-bg)}
+.flag{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:var(--flag-bg);color:var(--flag);border-radius:6px;padding:2px 7px;margin-left:6px;vertical-align:middle;line-height:1.5}
+body:not(.show-flags) .flag{display:none}
+
+/* hero */
+.hero{background:radial-gradient(120% 70% at 80% 0%,#2A4663 0%,transparent 60%),linear-gradient(180deg,var(--night) 0%,var(--night-2) 100%);color:var(--snow);position:relative;overflow:hidden}
+.hero .wrap{padding-block:28px 40px;position:relative;z-index:1;display:flex;flex-direction:column;gap:18px}
+.logo{width:56px;height:56px;display:block}
+.logo-link{display:inline-block;border-radius:12px;transition:opacity .2s}.logo-link:hover{opacity:.85}.logo-link:focus-visible{outline:2px solid #9fd3ff;outline-offset:4px}
+.eyebrow{font-size:12.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ice)}
+.hero h1{font-size:clamp(34px,9.5vw,46px);font-weight:800;letter-spacing:-.02em}
+.hero h1 em{font-style:normal;color:var(--ice)}
+.hero h1 u{text-decoration:none;color:var(--ice);background:linear-gradient(var(--ice),var(--ice)) no-repeat 0 92%/100% .12em;padding-bottom:.04em;animation:draw .9s .5s cubic-bezier(.2,.7,.2,1) both}
+.rot{display:grid}
+.rot > span{grid-area:1/1;opacity:0;transform:translateY(16px);transition:opacity .8s ease-out,transform .8s cubic-bezier(.2,.7,.2,1)}
+.rot > span.on{opacity:1;transform:none}
+.rot > span:not(.on){transform:translateY(-16px)}
+.rot u{text-decoration:none;color:var(--ice);background:linear-gradient(var(--ice),var(--ice)) no-repeat 0 92%/0 .12em;padding-bottom:.04em}
+.rot > span.on u{animation:draw 1.2s 1.8s cubic-bezier(.45,0,.2,1) both} /* title in (0.8s), pause, underline draws, then holds */
+.rot > span:not(.on) u{animation:none;background-size:100% .12em}
+@keyframes draw{from{background-size:0 .12em}to{background-size:100% .12em}}
+.promise{font-size:17px;color:#D5E1EC;max-width:34ch}
+.when{border-top:1px solid rgba(191,221,242,.25);padding-top:16px;display:grid;gap:6px}
+.when .date{font-size:18px;font-weight:600}
+.when .zones{font-size:14px;color:#B7C7D6;font-variant-numeric:tabular-nums}
+.when .local{font-size:14px;color:var(--ice)}
+.meta{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:13px;font-weight:500;border:1px solid rgba(191,221,242,.35);color:#DCE7F1;border-radius:99px;padding:4px 12px}
+.snow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+
+/* buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;border-radius:14px;border:0;font:inherit;font-size:17px;font-weight:700;text-decoration:none;cursor:pointer;transition:transform .15s ease-out,filter .15s ease-out}
+.btn:active{transform:scale(.98)}
+.btn-ice{background:var(--ice);color:var(--night)}
+.btn-ice:hover{filter:brightness(1.05)}
+.btn-night{background:var(--night);color:var(--snow)}
+.btn-night:hover{background:var(--night-2)}
+.btn-ghost{background:var(--snow);color:var(--night);border:1.5px solid var(--mist)}
+.btn-note{font-size:13px;color:var(--slate);text-align:center;margin-top:8px}
+.hero .btn-note{color:#9FB2C4}
+
+/* sections */
+section.band .wrap{padding-block:44px;display:flex;flex-direction:column;gap:18px}
+section.band + section.band .wrap{border-top:1px solid var(--mist)}
+.kicker{font-size:12.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--steel)}
+h2{font-size:clamp(26px,7vw,32px);font-weight:700;letter-spacing:-.01em;color:var(--night)}
+.lead{font-size:16.5px;color:#2C3B4E}
+
+/* form card */
+.formband{background:linear-gradient(180deg,var(--frost),var(--ice-soft))}
+.formband .wrap{padding-block:44px}
+.card{background:var(--snow);border:1px solid var(--mist);border-radius:20px;padding:24px 20px;box-shadow:0 10px 30px rgba(14,26,43,.08);display:flex;flex-direction:column;gap:16px}
+.card h2{font-size:24px}
+.field{display:flex;flex-direction:column;gap:6px}
+label,.legend{font-size:14px;font-weight:600;color:var(--night)}
+.opt{font-weight:500;color:var(--slate)}
+input[type=text],input[type=email],input[type=tel]{font:inherit;font-size:16px;min-height:52px;padding:12px 14px;border:1.5px solid var(--mist);border-radius:12px;background:var(--snow);color:var(--ink);width:100%}
+input:focus{outline:none;border-color:var(--steel);box-shadow:0 0 0 3px var(--ice-soft)}
+.hint{font-size:13px;color:var(--slate)}
+.err{font-size:13px;color:#A12A2A;font-weight:500}
+fieldset{border:0;margin:0;padding:14px;border-radius:14px;background:var(--frost);display:flex;flex-direction:column;gap:10px;min-width:0}
+.pills{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pills input{position:absolute;opacity:0;pointer-events:none}
+.pills label{display:flex;align-items:center;justify-content:center;min-height:46px;border:1.5px solid var(--mist);border-radius:12px;background:var(--snow);font-weight:600;cursor:pointer;transition:all .15s ease-out}
+.pills input:checked + label{background:var(--night);border-color:var(--night);color:var(--snow)}
+.pills input:focus-visible + label{outline:3px solid var(--steel);outline-offset:2px}
+.privacy{font-size:12.5px;color:var(--slate);text-align:center}
+
+/* thank you */
+.thanks{display:flex;flex-direction:column;gap:14px}
+.thanks .tick{width:48px;height:48px;border-radius:50%;background:var(--ice-soft);display:grid;place-items:center;color:var(--night)}
+.thanks .row{display:grid;gap:10px}
+.share{background:var(--frost);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.share p{font-size:15px}
+.trial{background:var(--night);color:var(--snow);border-radius:14px;padding:18px 16px;display:flex;flex-direction:column;gap:10px}
+.trial-k{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ice)}
+.trial h3{font-size:20px;line-height:1.25;color:var(--snow)}
+.trial p{font-size:15px;color:var(--ice-soft)}
+
+/* winter clock */
+.clock{background:var(--snow);border:1px solid var(--mist);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.bar{display:flex;height:34px;border-radius:10px;overflow:hidden;font-size:12px;font-weight:600}
+.bar span{display:flex;align-items:center;justify-content:center;white-space:nowrap}
+.bar .n{background:var(--night);color:var(--ice)}
+.bar .d{background:var(--ice);color:var(--night)}
+.clock .cap{font-size:13px;color:var(--slate)}
+blockquote{margin:0;padding:18px 18px 16px;border-radius:16px;background:var(--night);color:var(--snow);display:flex;flex-direction:column;gap:10px}
+blockquote p{font-size:18px;font-weight:500;line-height:1.5}
+blockquote .ar{font-family:"Amiri","Noto Naskh Arabic","Geeza Pro",serif;font-size:24px;line-height:1.9;font-weight:400;color:var(--ice);text-align:right}
+blockquote cite{font-style:normal;font-size:13px;color:var(--ice)}
+
+/* habits */
+.habits{display:flex;flex-direction:column;gap:14px;list-style:none;margin:0;padding:0}
+.habit{background:var(--snow);border:1px solid var(--mist);border-radius:18px;padding:20px 18px;display:flex;flex-direction:column;gap:10px}
+.habit .tag{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--steel)}
+.habit h3{font-size:20px;font-weight:700;color:var(--night)}
+.habit .src{font-size:14px;color:#3A4A5D;border-left:2px solid var(--ice);padding-left:12px}
+.habit .src small{display:block;font-size:12.5px;color:var(--slate)}
+.tomorrow{background:var(--ice-soft);border-radius:12px;padding:12px 14px;font-size:14.5px}
+.tomorrow b{display:block;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--steel)}
+
+/* ustadh */
+.ustadh{display:grid;grid-template-columns:108px 1fr;gap:18px;align-items:center}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.photo{width:108px;height:144px;border-radius:20px;background:linear-gradient(160deg,var(--steel),var(--night));display:grid;place-items:center;color:var(--ice);font-weight:700;font-size:26px;overflow:hidden}
+.photo img{width:100%;height:100%;object-fit:cover}
+.ustadh h3{font-size:20px;color:var(--night)}
+.ustadh .handle{font-size:14px;color:var(--slate)}
+.facts{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.facts li{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+.facts li::before{content:"";flex:0 0 8px;height:8px;margin-top:9px;border-radius:50%;background:var(--steel)}
+
+/* steps */
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0}
+.steps li{display:grid;grid-template-columns:36px 1fr;gap:14px;padding-bottom:18px;position:relative}
+.steps li:not(:last-child)::after{content:"";position:absolute;left:17px;top:36px;bottom:0;width:2px;background:var(--mist)}
+.steps .num{width:36px;height:36px;border-radius:50%;background:var(--night);color:var(--ice);display:grid;place-items:center;font-weight:700;font-size:15px}
+.steps h3{font-size:16.5px;font-weight:600;color:var(--night);margin-top:6px}
+.steps p{font-size:14.5px;color:#3A4A5D}
+
+/* faq */
+details{background:var(--snow);border:1px solid var(--mist);border-radius:14px}
+details + details{margin-top:10px}
+summary{list-style:none;cursor:pointer;padding:16px 48px 16px 16px;font-weight:600;color:var(--night);position:relative;min-height:44px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";position:absolute;right:16px;top:12px;font-size:22px;font-weight:500;color:var(--steel)}
+
+details p{padding:0 16px 16px;font-size:15px;color:#3A4A5D}
+
+/* final */
+.final{background:linear-gradient(180deg,var(--night-2),var(--night));color:var(--snow)}
+.final .wrap{padding-block:48px 56px;display:flex;flex-direction:column;gap:16px;text-align:center;align-items:center}
+.final h2{color:var(--snow)}
+.final p{color:#C9D6E2}
+/* Ilmi calligraphy: the logo mark tiled as a faint pattern (same idea as the ilmi.online footer) */
+.pattern{position:relative;isolation:isolate}
+.pattern::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--pat,transparent);-webkit-mask-image:url("/images/monogram-pattern-white-spaced.svg");mask-image:url("/images/monogram-pattern-white-spaced.svg");-webkit-mask-size:800px auto;mask-size:800px auto;-webkit-mask-repeat:repeat;mask-repeat:repeat;-webkit-mask-position:0 var(--my,0px);mask-position:0 var(--my,0px);transition:opacity .4s ease-out}
+body.no-pattern .pattern::before{opacity:0}
+.hero.pattern{--pat:rgba(191,221,242,.04)}
+.hero .snow{z-index:0}
+.hero .blob{position:absolute;border-radius:50%;filter:blur(64px);pointer-events:none;z-index:-1}
+.hero .blob.b1{top:18%;right:-60px;width:384px;height:384px;background:rgba(127,176,214,.16)}
+.hero .blob.b2{bottom:12%;left:-80px;width:288px;height:288px;background:rgba(191,221,242,.12)}
+section.band.pattern{--pat:rgba(61,90,115,.045)}
+section.final.pattern{--pat:rgba(191,221,242,.05)}
+/* footer: same layout as ilmi.online, winter colours */
+.foot-outer{background:var(--frost);--pat:rgba(61,90,115,.045);padding-top:44px}
+footer{--pat:rgba(191,221,242,.045);background:linear-gradient(180deg,#16263A,var(--night));color:#A9BACB;border-radius:28px 28px 0 0;overflow:hidden}
+footer .wrap{max-width:1100px;padding-block:52px 28px;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center}
+.f-logo{width:60px;height:60px}
+.f-date{color:var(--ice)}
+.f-cta{font-size:clamp(26px,6.5vw,34px);font-weight:700;color:var(--snow);max-width:20ch}
+.f-tag{font-size:15px;line-height:1.6;max-width:44ch;color:#C3D1DE;margin-top:-8px}
+.f-btn{max-width:420px}
+.f-social{display:flex;gap:12px}
+.f-social a{width:44px;height:44px;border-radius:50%;background:rgba(191,221,242,.1);display:grid;place-items:center;color:var(--snow);transition:background .2s ease-out,transform .2s ease-out}
+.f-social a:hover{background:rgba(191,221,242,.2);transform:translateY(-2px)}
+.f-rule{width:100%;height:1px;background:rgba(191,221,242,.16)}
+.f-wa{font-size:15.5px;color:#DCE6EF;text-wrap:balance}
+.f-wa svg{color:var(--ice);display:inline-block;vertical-align:-5px;margin-right:8px}
+.f-wa a{color:var(--ice);font-weight:600;text-decoration:none;white-space:nowrap}
+.f-wa a:hover{text-decoration:underline}
+.f-bottom{width:100%;display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between;align-items:center;font-size:13.5px}
+.f-links{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:center}
+.f-links a{color:#C3D1DE;text-decoration:none}
+.f-links a:hover{color:var(--snow);text-decoration:underline}
+@media (max-width:640px){.f-bottom{flex-direction:column-reverse;justify-content:center}}
+
+/* motion */
+.hero .wrap > *{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+.hero .wrap > *:nth-child(2){animation-delay:.08s}.hero .wrap > *:nth-child(3){animation-delay:.16s}.hero .wrap > *:nth-child(4){animation-delay:.24s}.hero .wrap > *:nth-child(5){animation-delay:.32s}.hero .wrap > *:nth-child(6){animation-delay:.4s}.hero .wrap > *:nth-child(7){animation-delay:.48s}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.reveal{transition:opacity .6s ease-out,transform .6s cubic-bezier(.2,.7,.2,1)}
+.reveal.pre{opacity:0;transform:translateY(22px)}
+.btn{position:relative;overflow:hidden}
+.btn:hover{transform:translateY(-1px)}
+.btn-ice,.btn-night{box-shadow:0 6px 18px rgba(14,26,43,.18)}
+.habit{transition:transform .2s ease-out,box-shadow .2s ease-out}
+.habit:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(14,26,43,.08)}
+.pills input:checked + label{animation:pop .25s ease-out}
+@keyframes pop{50%{transform:scale(1.06)}}
+.thanks:not([hidden]) > *{animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+.thanks > *:nth-child(2){animation-delay:.06s}.thanks > *:nth-child(3){animation-delay:.12s}.thanks > *:nth-child(4){animation-delay:.18s}.thanks > *:nth-child(5){animation-delay:.24s}.thanks > *:nth-child(6){animation-delay:.3s}
+details{transition:border-color .2s ease-out,box-shadow .2s ease-out}
+details[open]{border-color:var(--steel);box-shadow:0 6px 18px rgba(14,26,43,.06)}
+summary::after{transition:transform .25s ease-out}
+details[open] summary::after{content:"+";transform:rotate(45deg)}
+details .ans{overflow:hidden}
+/* back to top */
+.totop{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:48px;height:48px;border-radius:50%;border:1px solid rgba(191,221,242,.4);background:var(--night);color:var(--ice);display:grid;place-items:center;cursor:pointer;z-index:20;box-shadow:0 8px 20px rgba(14,26,43,.25);transition:opacity .25s ease-out,transform .25s ease-out}
+.totop.off{opacity:0;transform:translateY(12px);pointer-events:none}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal.pre{opacity:1;transform:none}*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="draft" id="draftBar" hidden>
+  <div class="wrap">
+    <span>Draft preview</span>
+    <span>Headline:</span>
+    <button type="button" id="hA" aria-pressed="true">A</button>
+    <button type="button" id="hB" aria-pressed="false">B</button>
+    <button type="button" id="hC" aria-pressed="false">C</button>
+    <button type="button" id="hD" aria-pressed="false">D</button>
+    <button type="button" id="flagBtn" aria-pressed="true">Quote flags on</button>
+    <button type="button" id="patBtn" aria-pressed="true">Calligraphy on</button>
+  </div>
+</div>
+
+<header class="hero pattern">
   <div class="blob b1" aria-hidden="true"></div><div class="blob b2" aria-hidden="true"></div>
   <canvas class="snow" id="snow" aria-hidden="true"></canvas>
   <div class="wrap">
-    <p class="brand"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M16 3v26M4.7 9.5l22.6 13M27.3 9.5l-22.6 13M16 8l-3-3M16 8l3-3M16 24l-3 3M16 24l3 3M9 12l-4-1M9 12l-1-4M23 20l4 1M23 20l1 4M23 12l4-1M23 12l1-4M9 20l-4 1M9 20l-1 4"/></svg>The Winter Lock-In</p>
-    <p class="eyebrow">Free live session with Yasin Munye</p>
-    <h1>Lock in this winter. <em>Walk into Ramadan ready.</em></h1>
-    <p class="promise">Short days, long nights, fewer distractions. One free hour on three winter habits you can start the next morning, so Ramadan isn't a cold start.</p>
+    <a class="logo-link" href="/" aria-label="Ilmi Online home"><img class="logo" alt="" src="/images/ilmi-logo.svg" width="56" height="56"></a>
+    <p class="eyebrow">Free live webinar with Ustadh Yasin Munye</p>
+    <h1 id="headline"><span data-h="A">Your Ramadan starts <em>this winter.</em></span><span data-h="B" hidden>Short days to fast. <em>Long nights to pray.</em></span><span data-h="C" hidden>How the Salaf <u>Won</u> the Winter</span><span data-h="D" hidden class="rot" aria-live="off"><span class="on">Your Ramadan starts <u>this winter.</u></span><span aria-hidden="true">Short days to fast. <u>Long nights to pray.</u></span><span aria-hidden="true">How the Salaf <u>Won</u> the Winter</span></span></h1>
+    <p class="promise" id="promise"><span data-h="A">Short days for fasting, long nights for prayer. Learn the 3 winter habits of the Salaf, and start the first one tomorrow.</span><span data-h="D" hidden>Short days for fasting, long nights for prayer. Learn the 3 winter habits of the Salaf, and start the first one tomorrow.</span><span data-h="C" hidden>Short days for fasting, long nights for prayer. Learn the 3 winter habits of the Salaf, and start the first one tomorrow before Ramadan arrives.</span><span data-h="B" hidden>The Salaf loved winter for a reason. Learn their 3 winter habits, and get to Ramadan already fasting and praying at night.</span></p>
     <div class="when">
       <p class="date" id="dateLine">Wednesday 9 December</p>
-      <p class="zones" id="zones">7:00pm UK time</p>
+      <p class="zones" id="zones">7:00pm UK · 10:00pm Makkah · 11:00pm Dubai · 2:00pm New York</p>
       <p class="local" id="localTime"></p>
     </div>
-    <div class="meta"><span class="chip">Free</span><span class="chip">Live on Zoom</span><span class="chip">About 60 min</span><span class="chip">Replay if you sign up</span></div>
+    <div class="meta"><span class="chip">Free</span><span class="chip">Live on Zoom</span><span class="chip">About 60 min</span><span class="chip">Replay for registrants</span></div>
     <div>
       <a class="btn btn-ice" href="#register">Save my free seat</a>
     </div>
   </div>
 </header>
 
-<section class="band formband" id="register" aria-labelledby="regTitle">
+<section class="band pattern" aria-labelledby="whyTitle">
+  <div class="wrap">
+    <p class="kicker">Why winter</p>
+    <h2 id="whyTitle">Winter, the believer's spring</h2>
+    <p class="lead">For the Salaf, winter was the easiest season of worship in the whole year. This year it comes right before Ramadan, so every fast and every night prayer you start now is practice for the month itself.</p>
+    <div class="clock" role="img" aria-label="London on 21 December: about 7 hours 50 minutes of daylight and 16 hours 10 minutes of night.">
+      <div class="bar"><span class="n" style="flex:8.1">Night</span><span class="d" style="flex:7.83">Day 7h 50m</span><span class="n" style="flex:8.07">Night</span></div>
+      <p class="cap">London, 21 December: under 8 hours of daylight and over 16 hours of night. A December fast there lasts about 10 hours.</p>
+    </div>
+    <blockquote>
+      <p class="ar" lang="ar" dir="rtl">مَرْحَبًا بِالشِّتَاءِ، تَنْزِلُ فِيهِ الْبَرَكَةُ، وَيَطُولُ فِيهِ اللَّيْلُ لِلْقِيَامِ، وَيَقْصُرُ فِيهِ النَّهَارُ لِلصِّيَامِ</p>
+      <p>"Welcome, winter. Blessings come down in it. Its night is long for standing in prayer, and its day is short for fasting."</p>
+      <cite>Reported from Ibn Mas'ud <span class="flag">Ustadh to check</span></cite>
+    </blockquote>
+    <a class="btn btn-night" href="#register">Save my free seat</a>
+  </div>
+</section>
+
+<section class="band pattern" aria-labelledby="habitsTitle">
+  <div class="wrap">
+    <p class="kicker">What you'll leave with</p>
+    <h2 id="habitsTitle">3 habits of the Salaf, each with a step you can start tomorrow</h2>
+    <ul class="habits">
+      <li class="habit">
+        <span class="tag">Fasting</span>
+        <h3>One voluntary fast this week</h3>
+        <p class="src">"Fasting in winter is the cool, easy booty."<small>Abu Hurayrah (Tirmidhi) <span class="flag">Ustadh to check</span></small></p>
+        <p class="tomorrow"><b>Start tomorrow</b>Pick your fast day for this week tonight. In winter the day is over almost before you feel hungry.</p>
+      </li>
+      <li class="habit">
+        <span class="tag">Night prayer</span>
+        <h3>Qiyam with ten verses, tonight</h3>
+        <p class="src">"Whoever stands in prayer with ten verses is not written among the heedless."<small>Abu Dawud <span class="flag">Ustadh to check</span></small></p>
+        <p class="tomorrow"><b>Start tonight</b>Before you sleep, pray two rakahs and recite ten verses. It takes about five minutes.</p>
+      </li>
+      <li class="habit">
+        <span class="tag">Fajr and 'Asr</span>
+        <h3>Guard Fajr and 'Asr, with full wudu in the cold</h3>
+        <p class="src">"Whoever prays the two cool prayers will enter Paradise."<small>Bukhari and Muslim <span class="flag">Ustadh to check</span></small></p>
+        <p class="tomorrow"><b>Start tomorrow</b>Set your Fajr alarm tonight, and make your wudu complete, even when the water is cold.</p>
+      </li>
+    </ul>
+    <a class="btn btn-night" href="#register">Save my free seat</a>
+  </div>
+</section>
+
+<section class="band formband pattern" id="register" aria-labelledby="regTitle">
   <div class="wrap">
     <div class="card" id="formCard">
       <h2 id="regTitle">Save your seat</h2>
-      <p class="hint" id="regSub" style="margin-top:-8px">The Winter Lock-In, Wednesday 9 December at 7:00pm UK</p>
+      <p class="hint" style="margin-top:-8px">How the Salaf Won the Winter</p>
       <form id="regForm" novalidate>
         <div style="display:flex;flex-direction:column;gap:16px">
           <div class="field">
@@ -68,34 +363,44 @@
           <div class="field">
             <label for="wa">WhatsApp number</label>
             <input type="tel" id="wa" name="whatsapp" autocomplete="tel" inputmode="tel" placeholder="+44 7700 900123" required>
-            <p class="hint">With your country code. We only use it for your reminders and the replay link.</p>
+            <p class="hint">With your country code. We only use it for the reminder and the replay link.</p>
             <p class="err" id="waErr" hidden>Please add your number with the country code, for example +44 7700 900123.</p>
           </div>
-          <input type="hidden" name="source" id="source" value="winterlockin">
+          <fieldset>
+            <p class="legend" id="cohortQ">Would you consider a free trial at Ilmi Online? <span class="opt">(optional)</span></p>
+            <div class="pills" role="radiogroup" aria-labelledby="cohortQ">
+              <input type="radio" name="trial_interest" id="cY" value="Yes"><label for="cY">Yes</label>
+              <input type="radio" name="trial_interest" id="cM" value="Maybe"><label for="cM">Maybe</label>
+              <input type="radio" name="trial_interest" id="cN" value="No"><label for="cN">No</label>
+            </div>
+            <p class="hint">This just helps us plan. It doesn't sign you up for anything.</p>
+          </fieldset>
+          <input type="hidden" name="source" id="source" value="direct">
+          <input type="hidden" name="campaign" id="campaign" value="winter-webinar">
           <div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="website">Leave this empty</label><input type="text" id="website" name="website" tabindex="-1" autocomplete="off"></div>
           <button class="btn btn-night" type="submit" id="submitBtn">Save my free seat</button>
           <p class="err" id="submitErr" role="alert" hidden>We couldn't save your seat just now. Please check your connection and try again.</p>
-          <p class="privacy">Free. We'll only message you on WhatsApp about this session, and you can opt out at any time. <a href="/privacy">Privacy</a></p>
+          <p class="privacy">Free. We'll only message you on WhatsApp about this webinar. You can opt out at any time.</p>
         </div>
       </form>
 
       <div class="thanks" id="thanks" hidden>
         <div class="tick" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <h2 id="thanksTitle" tabindex="-1">You're in.</h2>
-        <p class="lead" id="thanksWhen">See you on Wednesday 9 December at 7:00pm UK time. Check WhatsApp for your confirmation. The join link comes on the day.</p>
+        <p class="lead" id="thanksWhen">See you on Wednesday 9 December at 7:00pm UK. We've sent a confirmation to your WhatsApp, and the join link comes on the day.</p>
         <div class="row">
           <a class="btn btn-night" id="gcal" href="#" target="_blank" rel="noopener">Add to Google Calendar</a>
           <button class="btn btn-ghost" type="button" id="ics">Add to Apple or Outlook calendar</button>
-          <a class="btn btn-ghost" id="waJoin" href="#" target="_blank" rel="noopener">Follow our WhatsApp channel</a>
+          <a class="btn btn-ghost" id="waJoin" href="#" target="_blank" rel="noopener">Join our WhatsApp channel</a>
         </div>
         <div class="trial" id="trialCard">
-          <p class="trial-k">While you wait</p>
+          <p class="trial-k">While you wait for the webinar</p>
           <h3>Try Ilmi Online free for 10 days</h3>
-          <p>Join Yasin's weekly live classes and Q&amp;A, and get the full recordings library. Cancel before day 10 and you won't pay anything.</p>
-          <a class="btn btn-ice" id="trialBtn" href="#" target="_blank" rel="noopener">Start my 10-day free trial</a>
+          <p>Join Ustadh Yasin's weekly live classes and Q&amp;A, and get the full recordings library. Cancel before day 10 and you won't pay anything.</p>
+          <a class="btn btn-ice" id="trialBtn" href="https://www.ilmcourses.uk/offers/G3Ba6yDk?utm_source=winter-webinar&amp;utm_medium=thank-you" target="_blank" rel="noopener">Start my 10-day free trial</a>
         </div>
         <div class="share">
-          <p><b>Bring a friend.</b> Winter is easier with company. Send this to one person you'd like to lock in with.</p>
+          <p><b>Bring a friend.</b> Winter is easier with company. Send this to one person you'd like to fast and pray with this winter.</p>
           <a class="btn btn-ghost" id="waShare" href="#" target="_blank" rel="noopener">Share on WhatsApp</a>
           <button class="btn btn-ghost" type="button" id="copyLink">Copy the link</button>
           <p class="hint" id="copyMsg" hidden></p>
@@ -105,54 +410,13 @@
   </div>
 </section>
 
-<section class="band" aria-labelledby="whyTitle">
+<section class="band pattern" aria-labelledby="ustadhTitle">
   <div class="wrap">
-    <p class="kicker">Why winter</p>
-    <h2 id="whyTitle">Winter is the easiest season to build a habit</h2>
-    <p class="lead">The days are short, the nights are long, and there's less pulling you out of the house. This year winter runs straight into Ramadan, so whatever you lock in now, you carry in with you.</p>
-    <div class="clock" role="img" aria-label="London on 21 December: about 7 hours 50 minutes of daylight and 16 hours 10 minutes of night.">
-      <div class="bar"><span class="n" style="flex:8.1">Night</span><span class="d" style="flex:7.83">Day 7h 50m</span><span class="n" style="flex:8.07">Night</span></div>
-      <p class="cap">London, 21 December: under 8 hours of daylight and over 16 hours of night. A fast that day lasts about 10 hours.</p>
-    </div>
-    <a class="btn btn-night" href="#register">Save my free seat</a>
-  </div>
-</section>
-
-<section class="band" aria-labelledby="habitsTitle">
-  <div class="wrap">
-    <p class="kicker">What you'll leave with</p>
-    <h2 id="habitsTitle">Three winter habits, each with a first step for the next day</h2>
-    <ul class="habits">
-      <li class="habit">
-        <span class="tag">Fasting</span>
-        <h3>Fast while the days are short</h3>
-        <p class="why">A December fast in the UK is about 10 hours. It's the gentlest practice run you'll get before Ramadan.</p>
-        <p class="tomorrow"><b>Start this week</b>Pick your day tonight. In winter it's over almost before you feel hungry.</p>
-      </li>
-      <li class="habit">
-        <span class="tag">Nights</span>
-        <h3>Put the long nights to work</h3>
-        <p class="why">Sixteen hours of darkness leaves room for a few quiet minutes before bed or before dawn. You'll learn how to claim them and keep them.</p>
-        <p class="tomorrow"><b>Start tonight</b>Take five quiet minutes before you sleep, with your phone in another room. On the night you'll learn what to fill them with.</p>
-      </li>
-      <li class="habit">
-        <span class="tag">Mornings and afternoons</span>
-        <h3>Guard the two ends of the day</h3>
-        <p class="why">When the day is this short, the early morning and the late afternoon carry it. Hold those two and the rest follows.</p>
-        <p class="tomorrow"><b>Start tomorrow</b>Set your alarm for before sunrise tonight, and get up when it goes off.</p>
-      </li>
-    </ul>
-    <a class="btn btn-night" href="#register">Save my free seat</a>
-  </div>
-</section>
-
-<section class="band" aria-labelledby="hostTitle">
-  <div class="wrap">
-    <p class="kicker">Your host</p>
-    <div class="host">
-      <div class="photo"><img src="/images/host.webp" alt="Yasin Munye" width="108" height="144" loading="lazy"></div>
+    <p class="kicker">Your teacher</p>
+    <div class="ustadh">
+      <div class="photo" id="photo" aria-label="Photo of Ustadh Yasin Munye">YM</div>
       <div>
-        <h3 id="hostTitle">Yasin Munye</h3>
+        <h3 id="ustadhTitle">Ustadh Yasin Munye</h3>
         <p class="handle">@yasin_munye</p>
       </div>
     </div>
@@ -160,56 +424,304 @@
       <li>Teaches the live weekly classes at Ilmi Online.</li>
       <li>Graduated from King Abdulaziz University, Jeddah.</li>
       <li>Has studied for over 10 years.</li>
+      <li><span>Watch his lessons at <a href="https://www.youtube.com/@ilmi.online1" target="_blank" rel="noopener">youtube.com/ilmi.online1</a></span></li>
     </ul>
+    <a class="btn btn-night" href="#register">Save my free seat</a>
   </div>
 </section>
 
-<section class="band" aria-labelledby="afterTitle">
+<section class="band pattern" aria-labelledby="afterTitle">
   <div class="wrap">
-    <p class="kicker">After you sign up</p>
+    <p class="kicker">After you register</p>
     <h2 id="afterTitle">What happens next</h2>
     <ol class="steps">
-      <li><span class="num">1</span><div><h3>A confirmation on WhatsApp</h3><p>It arrives straight away, so you know your seat is saved.</p></div></li>
-      <li><span class="num">2</span><div><h3>Reminders as it gets close</h3><p>Two days before, the day before, and the join link an hour before we start.</p></div></li>
-      <li><span class="num">3</span><div><h3>Join live</h3><p>About 60 minutes on Zoom, with time for your questions in the written Q&amp;A.</p></div></li>
-      <li><span class="num">4</span><div><h3>Missed it? Watch the replay</h3><p>We send the replay link to everyone who signed up.</p></div></li>
+      <li><span class="num">1</span><div><h3>A confirmation on WhatsApp, straight away</h3><p>From Ilmi's own number, with a button to add the webinar to your calendar.</p></div></li>
+      <li><span class="num">2</span><div><h3>Reminders as it gets close</h3><p>Two days before, the day before, and the join link an hour before it starts.</p></div></li>
+      <li><span class="num">3</span><div><h3>Join live with Ustadh</h3><p>About 60 minutes on Zoom, also streamed on YouTube, with time for your questions in the written Q&amp;A.</p></div></li>
+      <li><span class="num">4</span><div><h3>Missed it? Watch the replay</h3><p>We send the YouTube replay link to everyone who registered.</p></div></li>
     </ol>
   </div>
 </section>
 
-<section class="band" aria-labelledby="faqTitle">
+<section class="band pattern" aria-labelledby="faqTitle">
   <div class="wrap">
     <p class="kicker">Questions</p>
     <h2 id="faqTitle">Before you sign up</h2>
     <div>
       <details><summary>Is it really free?</summary><div class="ans"><p>Yes. There's nothing to pay and we don't ask for card details.</p></div></details>
-      <details><summary>Who is it for?</summary><div class="ans"><p>Anyone who wants to reach Ramadan with their habits already in place. Men and women are both welcome. Only the host is on camera, and you ask your questions in writing.</p></div></details>
-      <details><summary>Will there be a replay?</summary><div class="ans"><p>Yes. Everyone who signs up gets the replay link, so sign up even if you can't make it live.</p></div></details>
-      <details><summary>What time is it where I live?</summary><div class="ans"><p id="faqTime">Wednesday 9 December at 7:00pm UK time.</p></div></details>
-      <details><summary>Do I need to download Zoom?</summary><div class="ans"><p>No. You can join from the free Zoom app or from your phone's browser. The link comes by WhatsApp.</p></div></details>
-      <details><summary>Why do you need my WhatsApp number?</summary><div class="ans"><p>Only to send you the reminders, the join link and the replay. You can opt out at any time.</p></div></details>
-      <details><summary>Who runs this?</summary><div class="ans"><p>The Winter Lock-In is a free session from Ilmi Online, hosted by Yasin Munye.</p></div></details>
+      <details><summary>Will there be a replay?</summary><div class="ans"><p>Yes. Everyone who registers gets the YouTube replay link, so register even if you can't make it live.</p></div></details>
+      <details><summary>Are sisters welcome?</summary><div class="ans"><p>Yes, this is for brothers and sisters. Only Ustadh is on camera. You can ask your questions in writing, without your camera or microphone.</p></div></details>
+      <details><summary>What time is it where I live?</summary><div class="ans"><p id="faqTime">Wednesday 9 December at 7:00pm UK time, which is 10:00pm in Makkah, 11:00pm in Dubai and 2:00pm in New York.</p></div></details>
+      <details><summary>Do I need to download Zoom?</summary><div class="ans"><p>No. You can join from the free Zoom app, your phone's browser, or watch on YouTube. The links come by WhatsApp.</p></div></details>
+      <details><summary>Why do you need my WhatsApp number?</summary><div class="ans"><p>Only to send you the reminder and the replay link. You can opt out at any time.</p></div></details>
     </div>
   </div>
 </section>
 
 <button type="button" class="totop off" id="toTop" aria-label="Back to top"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
 
-<div class="foot-outer">
-<footer>
+<div class="foot-outer pattern">
+<footer class="pattern">
   <div class="wrap">
-    <h2 class="f-cta">Ramadan is expected around <span class="f-date">8 February</span>. Start this winter.</h2>
-    <p class="f-tag">One free hour, three habits, and a first step you can take the next morning.</p>
+    <h2 class="f-cta" id="finalTitle">Ramadan is expected around <span class="f-date">8 February</span>. Start this winter.</h2>
+    <p class="f-tag">One free hour with Ustadh, three habits, and a first step you can take tomorrow.</p>
+    <div class="f-social">
+      <a id="fIg" href="#" target="_blank" rel="noopener" aria-label="Ilmi Online on Instagram"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+      <a id="fYt" href="#" target="_blank" rel="noopener" aria-label="Ilmi Online on YouTube"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="4"/><path d="M10 9.2v5.6l4.8-2.8z" fill="currentColor" stroke="none"/></svg></a>
+    </div>
+    <div class="f-rule"></div>
     <a class="btn btn-ice f-btn" href="#register">Save my free seat</a>
     <div class="f-rule"></div>
     <div class="f-bottom">
-      <p>© <span id="fYear">2026</span> The Winter Lock-In, a free session from Ilmi Online.</p>
-      <nav class="f-links" aria-label="Legal"><a href="/privacy">Privacy</a></nav>
+      <p>© <span id="fYear">2026</span> ilmi. All rights reserved.</p>
+      <nav class="f-links" aria-label="Legal"><a id="fTerms" href="#" target="_blank" rel="noopener">Terms of Service</a><a id="privacyLink" href="#" target="_blank" rel="noopener">Privacy Policy</a><a id="fRefund" href="#" target="_blank" rel="noopener">Refund Policy</a></nav>
     </div>
   </div>
 </footer>
 </div>
 
-<script src="/app.js"></script>
+<script>
+/* ===== Settings: change these, nothing else ===== */
+const CONFIG = {
+  draft: false,
+  headline: "D",                               // headline shown on the live page: A, B, C or D                                 // false for the live page: hides the draft bar and quote flags
+  startUTC: "2026-12-09T19:00:00Z",            // Wed 9 Dec, 7pm UK (GMT)
+  durationMin: 60,
+  pageUrl: location.origin + "/",              // this site, used in share links and calendar invites
+  whatsappJoinUrl: "https://whatsapp.com/channel/0029Vb7X3MMD38CXUTOq4G1m",  // Ilmi WhatsApp channel (same link as in the Chakra confirmation)
+  privacyUrl: "https://ilmi.online/legal#privacy",
+  termsUrl: "https://ilmi.online/legal#terms",
+  refundUrl: "https://ilmi.online/legal#refunds",
+  instagramUrl: "https://www.instagram.com/ilmi.online/",
+  youtubeUrl: "https://www.youtube.com/@ilmi.online1",
+  whatsappChannelUrl: "https://whatsapp.com/channel/0029Vb7X3MMD38CXUTOq4G1m",
+  ustadhPhoto: "/images/host.webp",                             // image URL for Ustadh's photo
+  // Sign-ups go to our own endpoint, which saves them in Chakra (see api/register.js).
+  registerUrl: "/api/register"
+};
+
+const $ = id => document.getElementById(id);
+const start = new Date(CONFIG.startUTC);
+const end = new Date(start.getTime() + CONFIG.durationMin*60000);
+const fmt = (tz, opts) => new Intl.DateTimeFormat("en-GB", Object.assign({timeZone: tz}, opts)).format(start);
+const t = tz => fmt(tz,{hour:"numeric",minute:"2-digit",hour12:true}).replace(" ","").toLowerCase();
+const dayUK = fmt("Europe/London",{weekday:"long",day:"numeric",month:"long"});
+const zones = `${t("Europe/London")} UK · ${t("Asia/Riyadh")} Makkah · ${t("Asia/Dubai")} Dubai · ${t("America/New_York")} New York`;
+$("dateLine").textContent = dayUK;
+$("zones").textContent = zones;
+$("faqTime").textContent = `${dayUK} at ${t("Europe/London")} UK time, which is ${t("Asia/Riyadh")} in Makkah, ${t("Asia/Dubai")} in Dubai and ${t("America/New_York")} in New York. The top of this page also shows it in your own time.`;
+try {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (tz && !["Europe/London","Asia/Riyadh","Asia/Dubai","America/New_York"].includes(tz)) {
+    const local = new Intl.DateTimeFormat("en-GB",{weekday:"long",hour:"numeric",minute:"2-digit",hour12:true}).format(start).replace(" am","am").replace(" pm","pm");
+    $("localTime").textContent = `Your time: ${local}`;
+  }
+} catch(e){}
+
+/* headline D: the three titles take turns */
+let rotTimer = null;
+function rotate(on){
+  clearInterval(rotTimer); rotTimer = null;
+  const items = [...document.querySelectorAll(".rot > span")];
+  items.forEach((el,i) => { el.classList.toggle("on", i===0); el.setAttribute("aria-hidden", i!==0); });
+  if (!on || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  let i = 0;
+  rotTimer = setInterval(() => {
+    items[i].classList.remove("on"); items[i].setAttribute("aria-hidden","true");
+    i = (i + 1) % items.length;
+    items[i].classList.add("on"); items[i].setAttribute("aria-hidden","false");
+  }, 6500);  /* in 0.8s, pause to 1.8s, underline to 3s, hold to 6.5s */
+}
+if (CONFIG.headline) { /* live page: pick the headline here */ }
+
+/* draft controls */
+if (CONFIG.draft) {
+  $("draftBar").hidden = false;
+  document.body.classList.add("show-flags");
+  const setH = v => {
+    document.querySelectorAll("[data-h]").forEach(el => el.hidden = el.dataset.h !== v);
+    ["A","B","C","D"].forEach(k => $("h"+k).setAttribute("aria-pressed", v===k));
+    rotate(v === "D");
+    try { localStorage.setItem("ilmiHeadline", v); } catch(e){}
+  };
+  ["A","B","C","D"].forEach(k => $("h"+k).onclick = () => setH(k));
+  try { const saved = localStorage.getItem("ilmiHeadline"); if (saved) setH(saved); } catch(e){}
+  $("patBtn").onclick = () => {
+    const off = document.body.classList.toggle("no-pattern");
+    $("patBtn").setAttribute("aria-pressed", !off); $("patBtn").textContent = off ? "Calligraphy off" : "Calligraphy on";
+  };
+  $("flagBtn").onclick = () => {
+    const on = document.body.classList.toggle("show-flags");
+    $("flagBtn").setAttribute("aria-pressed", on); $("flagBtn").textContent = on ? "Quote flags on" : "Quote flags off";
+  };
+}
+if (!CONFIG.draft && CONFIG.headline) {
+  document.querySelectorAll("[data-h]").forEach(el => el.hidden = el.dataset.h !== CONFIG.headline);
+  rotate(CONFIG.headline === "D");
+}
+if (CONFIG.ustadhPhoto) $("photo").innerHTML = `<img src="${CONFIG.ustadhPhoto}" alt="Ustadh Yasin Munye">`;
+$("privacyLink").href = CONFIG.privacyUrl;
+$("fTerms").href = CONFIG.termsUrl; $("fRefund").href = CONFIG.refundUrl;
+$("fIg").href = CONFIG.instagramUrl; $("fYt").href = CONFIG.youtubeUrl;
+$("fYear").textContent = new Date().getFullYear();
+
+/* where the visitor came from: ?src=winter-reel or utm_source */
+try {
+  const q = new URLSearchParams(location.search);
+  const src = q.get("src") || q.get("utm_source");
+  if (src) $("source").value = src.slice(0,60);
+} catch(e){}
+
+/* validation */
+const show = (id, bad) => { $(id).hidden = !bad; return bad; };
+function validate(){
+  const f = $("fname").value.trim(), e = $("email").value.trim(), w = $("wa").value.replace(/[\s()-]/g,"");
+  const bad = [
+    show("fnameErr", f.length < 1),
+    show("emailErr", !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)),
+    show("waErr", !/^\+?\d{8,15}$/.test(w))
+  ];
+  const first = ["fname","email","wa"][bad.indexOf(true)];
+  if (first) $(first).focus();
+  return !bad.includes(true);
+}
+
+/* send the sign-up to /api/register (-> Chakra). Only show "You're in" once it's saved. */
+async function register(data){
+  const res = await fetch(CONFIG.registerUrl, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error("register " + res.status);
+}
+
+let sending = false;
+$("regForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  if (sending || !validate()) return;
+  const name = $("fname").value.trim();
+  const data = {
+    first_name: name,
+    email: $("email").value.trim(),
+    whatsapp: $("wa").value.trim(),
+    trial_interest: (document.querySelector("input[name=trial_interest]:checked")||{}).value || "",
+    source: $("source").value,
+    website: $("website").value      // honeypot: real people leave this empty
+  };
+  $("submitErr").hidden = true;
+  if (!CONFIG.draft) {
+    sending = true; $("submitBtn").disabled = true; $("submitBtn").textContent = "Saving your seat…";
+    try { await register(data); }
+    catch (e) {
+      sending = false; $("submitBtn").disabled = false; $("submitBtn").textContent = "Save my free seat";
+      $("submitErr").hidden = false;
+      return;
+    }
+    if (window.fbq) fbq("track", "Lead", {content_name: "winter-webinar"});   // saved: count it for the ads
+  }
+  $("regForm").hidden = true;
+  document.querySelectorAll("#formCard > h2#regTitle, #formCard > .hint").forEach(el => el.hidden = true);
+  $("thanksTitle").textContent = `You're in, ${name}.`;
+  $("thanksWhen").textContent = `See you on ${dayUK} at ${t("Europe/London")} UK time. We've sent a confirmation to your WhatsApp, and the join link comes on the day.`;
+  $("thanks").hidden = false;
+  $("thanksTitle").focus();
+});
+
+/* thank-you actions */
+const title = "The Winter Before Ramadan: The Salaf's Game Plan";
+const details = `Free live webinar with Ustadh Yasin Munye. The join link comes by WhatsApp on the day. ${CONFIG.pageUrl}`;
+const stamp = d => d.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
+(function(){
+  const s = document.createElement("script"); s.type = "application/ld+json";
+  s.textContent = JSON.stringify({"@context":"https://schema.org","@type":"Event","name":"The Winter Before Ramadan: Free Live Webinar","description":"A free live webinar with Yasin Munye on 3 winter habits to start before Ramadan arrives.","startDate":start.toISOString(),"endDate":end.toISOString(),"eventAttendanceMode":"https://schema.org/OnlineEventAttendanceMode","eventStatus":"https://schema.org/EventScheduled","location":{"@type":"VirtualLocation","url":CONFIG.pageUrl},"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"GBP","availability":"https://schema.org/InStock","url":CONFIG.pageUrl},"organizer":{"@type":"Organization","name":"Ilmi Online","url":"https://ilmi.online"},"performer":{"@type":"Person","name":"Yasin Munye"}});
+  document.head.appendChild(s);
+})();
+$("gcal").href = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent(title) + "&dates=" + stamp(start) + "/" + stamp(end) + "&details=" + encodeURIComponent(details);
+$("ics").onclick = () => {
+  const ics = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Ilmi Online//Winter Webinar//EN","BEGIN:VEVENT","UID:winter-webinar-2026@ilmi.online","DTSTAMP:"+stamp(new Date()),"DTSTART:"+stamp(start),"DTEND:"+stamp(end),"SUMMARY:"+title,"DESCRIPTION:"+details,"BEGIN:VALARM","TRIGGER:-PT60M","ACTION:DISPLAY","DESCRIPTION:Webinar in 1 hour","END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));
+  a.download = "winter-before-ramadan.ics"; document.body.appendChild(a); a.click(); a.remove();
+};
+$("waJoin").href = CONFIG.whatsappJoinUrl;
+const shareText = `I'm joining a free live webinar with Ustadh Yasin Munye: "${title}". 3 habits of the Salaf to start before Ramadan. Come with me: ${CONFIG.pageUrl}?src=friend`;
+$("waShare").href = "https://wa.me/?text=" + encodeURIComponent(shareText);
+$("copyLink").onclick = () => {
+  const done = msg => { $("copyMsg").textContent = msg; $("copyMsg").hidden = false; };
+  const link = CONFIG.pageUrl + "?src=friend";
+  if (navigator.clipboard) navigator.clipboard.writeText(link).then(() => done("Link copied."), () => done(link));
+  else done(link);
+};
+
+/* reveal on scroll: only items below the first screen start hidden */
+(function(){
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce || !("IntersectionObserver" in window)) return;
+  const els = document.querySelectorAll("section.band h2, section.band .lead, .clock, blockquote, .habit, .card, .ustadh, .facts li, .steps li, details, .final h2, .final p");
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.remove("pre"); io.unobserve(e.target); } }), {rootMargin:"0px 0px -8% 0px"});
+  els.forEach((el,i) => {
+    el.classList.add("reveal");
+    if (el.getBoundingClientRect().top > innerHeight) {
+      el.classList.add("pre");
+      const sib = el.parentElement ? [...el.parentElement.children].indexOf(el) : 0;
+      el.style.transitionDelay = Math.min(sib,4)*70 + "ms";
+      io.observe(el);
+    }
+  });
+})();
+
+/* smooth FAQ open and close */
+document.querySelectorAll("details").forEach(d => {
+  const sum = d.querySelector("summary"), ans = d.querySelector(".ans");
+  sum.addEventListener("click", ev => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !ans.animate) return;
+    ev.preventDefault();
+    if (d.open) {
+      const h = ans.offsetHeight;
+      ans.animate([{height:h+"px",opacity:1},{height:"0px",opacity:0}],{duration:260,easing:"ease-out"}).onfinish = () => d.open = false;
+    } else {
+      d.open = true;
+      const h = ans.offsetHeight;
+      ans.animate([{height:"0px",opacity:0},{height:h+"px",opacity:1}],{duration:300,easing:"cubic-bezier(.2,.7,.2,1)"});
+    }
+  });
+});
+
+/* back to top */
+(function(){
+  const b = $("toTop"), hero = document.querySelector(".hero");
+  const check = () => b.classList.toggle("off", scrollY < hero.offsetHeight);
+  addEventListener("scroll", check, {passive:true}); check();
+  b.onclick = () => window.scrollTo({top:0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+})();
+
+/* one continuous monogram layer: line each section's pattern up with the page grid (800px wide tile) */
+(function(){
+  const tileH = 800 * 1067 / 1600;
+  const align = () => document.querySelectorAll(".pattern").forEach(el => {
+    const top = el.getBoundingClientRect().top + scrollY;
+    el.style.setProperty("--my", (-(top % tileH)).toFixed(1) + "px");
+  });
+  align(); addEventListener("resize", align); addEventListener("load", align);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(align);
+})();
+
+/* light snowfall in the hero */
+(function(){
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const c = $("snow"), x = c.getContext("2d"); let w, h, flakes = [];
+  const size = () => { w = c.width = c.offsetWidth * devicePixelRatio; h = c.height = c.offsetHeight * devicePixelRatio; };
+  size(); addEventListener("resize", size);
+  const count = Math.round(Math.min(110, Math.max(45, c.offsetWidth/8)));
+  for (let i = 0; i < count; i++) flakes.push({x: Math.random(), y: Math.random(), r: Math.random()*1.6 + .5, s: Math.random()*.0007 + .0003, d: Math.random()*6.28});
+  (function tick(){
+    x.clearRect(0,0,w,h); x.fillStyle = "rgba(220,235,246,.55)";
+    flakes.forEach(f => { f.y += f.s; f.d += .01; if (f.y > 1) f.y = 0;
+      x.beginPath(); x.arc((f.x + Math.sin(f.d)*.01)*w, f.y*h, f.r*devicePixelRatio, 0, 6.28); x.fill(); });
+    requestAnimationFrame(tick);
+  })();
+})();
+</script>
 </body>
 </html>
