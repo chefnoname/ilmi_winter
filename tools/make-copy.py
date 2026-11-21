@@ -27,9 +27,9 @@ rep('<meta property="og:title" content="The Winter Before Ramadan: The Salaf\'s 
 rep('<meta name="twitter:title" content="The Winter Before Ramadan: The Salaf\'s Game Plan" />',
     '<meta name="twitter:title" content="The Winter Before Ramadan: Free Live Webinar" />')
 
-# --- head: canonical and og:url come back once the new domain is attached
-rep('  <link rel="canonical" href="https://ilmi.online/winter" />\n', "")
-rep('  <meta property="og:url" content="https://ilmi.online/winter" />\n', "")
+# --- head: canonical and og:url point at this site's own domain
+rep('<link rel="canonical" href="https://ilmi.online/winter" />', '<link rel="canonical" href="https://ilmi-winter.app/" />')
+rep('<meta property="og:url" content="https://ilmi.online/winter" />', '<meta property="og:url" content="https://ilmi-winter.app/" />')
 rep('<link rel="icon" href="/favicon.ico" />', '<link rel="icon" type="image/png" href="/favicon.png" />')
 
 # --- head: Meta pixel

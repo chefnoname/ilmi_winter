@@ -1,9 +1,9 @@
 {
-  "name": "winter-lock-in",
+  "name": "ilmi-winter",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "The Winter Lock-In: standalone sign-up page for the free live session.",
+  "description": "Standalone sign-up page for the free winter webinar.",
   "engines": { "node": "22.x" },
   "scripts": {
     "test": "node --test test/*.test.js"

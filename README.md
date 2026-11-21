@@ -15,7 +15,7 @@ small function, no build step.
 ## What differs from ilmi.online/winter
 
 Only these: the date (9 December), the Meta pixel, the sign-up endpoint (`/api/register`), the page
-description and share title in `<head>`, and the logo and background tile being served as small SVG files.
+description, share title and address in `<head>`, and the logo and background tile being served as small SVG files.
 
 ## How a sign-up is saved
 
@@ -32,4 +32,5 @@ the `Lead` event once the sign-up has been saved, so failed or invalid submissio
 
 ## Deploy
 
-Vercel project `winterlockin`. Framework preset: Other. No build command, output is the repo root.
+Live at https://ilmi-winter.app. Vercel project `ilmi_winter`, connected to this repository: every push to
+`main` deploys. Framework preset: Other. No build command, output is the repo root.
