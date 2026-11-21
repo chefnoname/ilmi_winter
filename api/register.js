@@ -10,6 +10,8 @@
  *   1. Direct: CHAKRA_API_KEY + CHAKRA_WINTER_CAMPAIGN_ID are set on this project.
  *      Optional CHAKRA_ATTR_EVENT, CHAKRA_ATTR_TRIAL, CHAKRA_ATTR_SOURCE = keys of the custom
  *      lead attributes for event, trial_interest and source.
+ *      Optional CHAKRA_WINTER_CAMPAIGN_ID_48H and CHAKRA_WINTER_CAMPAIGN_ID_24H = shorter copies of
+ *      the campaign for people who sign up in the last 48 or 24 hours (see campaignFor below).
  *   2. Forward: REGISTER_FORWARD_URL is set. The sign-up is passed, server to server, to the
  *      main site's sign-up endpoint, which already holds the Chakra key. Nothing secret is
  *      needed on this project and the Chakra logic lives in one place.
@@ -21,6 +23,8 @@ const EVENT = "winter-webinar-2026";
 const DEFAULT_SOURCE = "direct";
 const TRIAL_ANSWERS = new Set(["Yes", "Maybe", "No"]);
 const CHAKRA = "https://api.chakrahq.com/v1/ext/procedure";
+const WEBINAR_START = Date.parse("2026-12-09T19:00:00Z");   // Wed 9 Dec, 7pm UK (GMT). Same as startUTC in index.html.
+const HOUR = 60 * 60 * 1000;
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -47,6 +51,23 @@ function post(url, body, token) {
   });
 }
 
+/**
+ * Which Chakra campaign a sign-up made at `now` joins. Chakra sends each reminder at a fixed time,
+ * so someone signing up with a day to go must not be put in the campaign that says "two days away".
+ *   more than 48h before the start: the full campaign (confirm, 48h, 24h, join link, replay)
+ *   48h to 24h before:              the "under 48h" copy (no 48h reminder)
+ *   under 24h, or after the start:  the "under 24h" copy (no 48h or 24h reminder)
+ * A late campaign that is not set falls back to the next longer one, so a sign-up is never dropped.
+ */
+export function campaignFor(now, env) {
+  const full = env.CHAKRA_WINTER_CAMPAIGN_ID;
+  const under48 = env.CHAKRA_WINTER_CAMPAIGN_ID_48H || full;
+  const under24 = env.CHAKRA_WINTER_CAMPAIGN_ID_24H || under48;
+  if (now >= WEBINAR_START - 24 * HOUR) return under24;
+  if (now >= WEBINAR_START - 48 * HOUR) return under48;
+  return full;
+}
+
 /** Create/update the lead, then add them to the winter campaign (which sends the confirmation). */
 async function sendToChakra(p, env) {
   const key = env.CHAKRA_API_KEY;
@@ -59,7 +80,7 @@ async function sendToChakra(p, env) {
   if (!lead.ok) throw new Error(`Chakra lead/process returned ${lead.status}`);
 
   const camp = await post(`${CHAKRA}/lead/add-phone-number-to-campaign`,
-    { campaignId: env.CHAKRA_WINTER_CAMPAIGN_ID, phoneNumber: p.phone }, key);
+    { campaignId: campaignFor(Date.now(), env), phoneNumber: p.phone }, key);
   if (camp.status >= 500) throw new Error(`Chakra campaign add returned ${camp.status}`);
   // A 4xx here usually means they're already in the campaign (signed up twice): the lead
   // is saved, so don't show the person an error, just log it.

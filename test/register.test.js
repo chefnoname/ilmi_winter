@@ -2,7 +2,7 @@
 import { test, before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
-import handler, { normalisePhone } from "../api/register.js";
+import handler, { normalisePhone, campaignFor } from "../api/register.js";
 
 let server, base, hits = [], nextStatus = 200;
 before(async () => {
@@ -21,7 +21,7 @@ before(async () => {
 after(() => server.close());
 beforeEach(() => {
   hits = []; nextStatus = 200;
-  for (const k of ["CHAKRA_API_KEY", "CHAKRA_WINTER_CAMPAIGN_ID", "CHAKRA_ATTR_EVENT", "CHAKRA_ATTR_TRIAL", "CHAKRA_ATTR_SOURCE", "REGISTER_FORWARD_URL"]) delete process.env[k];
+  for (const k of ["CHAKRA_API_KEY", "CHAKRA_WINTER_CAMPAIGN_ID", "CHAKRA_ATTR_EVENT", "CHAKRA_ATTR_TRIAL", "CHAKRA_ATTR_SOURCE", "REGISTER_FORWARD_URL", "CHAKRA_WINTER_CAMPAIGN_ID_48H", "CHAKRA_WINTER_CAMPAIGN_ID_24H"]) delete process.env[k];
 });
 
 const call = (body, method = "POST") =>
@@ -105,3 +105,40 @@ test("ignores a trial answer that isn't Yes, Maybe or No", async () => {
   await call({ ...good, trial_interest: "<script>" });
   assert.equal(hits[0].body.trial_interest, "");
 });
+
+// --- late sign-ups: the campaign is picked by the time left before Wed 9 Dec 2026, 7pm UK (19:00 UTC)
+const CAMPAIGNS = { CHAKRA_WINTER_CAMPAIGN_ID: "full", CHAKRA_WINTER_CAMPAIGN_ID_48H: "under48", CHAKRA_WINTER_CAMPAIGN_ID_24H: "under24" };
+const at = iso => Date.parse(iso);
+
+test("late sign-ups: the campaign changes exactly at 48 and 24 hours before the start", () => {
+  assert.equal(campaignFor(at("2026-11-21T20:00:00Z"), CAMPAIGNS), "full");
+  assert.equal(campaignFor(at("2026-12-07T18:59:59Z"), CAMPAIGNS), "full");
+  assert.equal(campaignFor(at("2026-12-07T19:00:00Z"), CAMPAIGNS), "under48");
+  assert.equal(campaignFor(at("2026-12-08T18:59:59Z"), CAMPAIGNS), "under48");
+  assert.equal(campaignFor(at("2026-12-08T19:00:00Z"), CAMPAIGNS), "under24");
+  assert.equal(campaignFor(at("2026-12-09T18:30:00Z"), CAMPAIGNS), "under24");
+  assert.equal(campaignFor(at("2026-12-09T19:00:00Z"), CAMPAIGNS), "under24");   // webinar has started
+  assert.equal(campaignFor(at("2026-12-12T09:00:00Z"), CAMPAIGNS), "under24");   // after it
+});
+
+test("late sign-ups: a late campaign that is not set falls back to the next longer one", () => {
+  const late = at("2026-12-09T12:00:00Z"), mid = at("2026-12-08T12:00:00Z");
+  assert.equal(campaignFor(late, { CHAKRA_WINTER_CAMPAIGN_ID: "full" }), "full");
+  assert.equal(campaignFor(mid, { CHAKRA_WINTER_CAMPAIGN_ID: "full" }), "full");
+  assert.equal(campaignFor(late, { CHAKRA_WINTER_CAMPAIGN_ID: "full", CHAKRA_WINTER_CAMPAIGN_ID_48H: "under48" }), "under48");
+  assert.equal(campaignFor(mid, { CHAKRA_WINTER_CAMPAIGN_ID: "full", CHAKRA_WINTER_CAMPAIGN_ID_24H: "under24" }), "full");
+  assert.equal(campaignFor(late, { CHAKRA_WINTER_CAMPAIGN_ID: "full", CHAKRA_WINTER_CAMPAIGN_ID_24H: "under24", CHAKRA_WINTER_CAMPAIGN_ID_48H: "" }), "under24");
+});
+
+for (const [when, expected] of [["2026-12-01T10:00:00Z", "full"], ["2026-12-08T10:00:00Z", "under48"], ["2026-12-09T10:00:00Z", "under24"]]) {
+  test(`late sign-ups: a sign-up at ${when} is added to the "${expected}" campaign in Chakra`, async (t) => {
+    Object.assign(process.env, CAMPAIGNS, { CHAKRA_API_KEY: "test-key" });
+    const realFetch = globalThis.fetch;
+    t.after(() => (globalThis.fetch = realFetch));
+    globalThis.fetch = (url, init) => realFetch(String(url).replace("https://api.chakrahq.com", base), init);
+    t.mock.timers.enable({ apis: ["Date"], now: at(when) });
+    assert.equal((await call(good)).status, 200);
+    assert.deepEqual(hits.map(h => h.url), ["/v1/ext/procedure/lead/process", "/v1/ext/procedure/lead/add-phone-number-to-campaign"]);
+    assert.deepEqual(hits[1].body, { campaignId: expected, phoneNumber: "447700900123" });
+  });
+}

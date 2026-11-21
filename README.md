@@ -23,6 +23,11 @@ The form posts to `/api/register`. The function checks the details, tidies the W
 country code with no plus (447...), creates or updates the lead in Chakra and adds the number to the
 "Winter webinar 2026" campaign, which sends the confirmation and the reminders.
 
+Late sign-ups join a shorter copy of that campaign, so nobody is told "two days away" with a day to go.
+The function picks by the time left before the webinar starts (9 December, 7pm UK): the full campaign up to
+48 hours before, `CHAKRA_WINTER_CAMPAIGN_ID_48H` from 48 to 24 hours before, and
+`CHAKRA_WINTER_CAMPAIGN_ID_24H` after that. If a late one is not set, the next longer one is used.
+
 Set the variables from `.env.example` in Vercel under Settings, Environment Variables. Never commit a real key.
 
 ## Meta pixel
