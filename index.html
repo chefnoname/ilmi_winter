@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <!--
+    The Winter Lock-In: standalone sign-up page for the free live session (paid Meta traffic).
+    Static files, no build step: styles.css, config.js (date, links, pixel) and app.js.
+    Sign-ups post to /api/register (see api/register.js).
+  -->
+  <title>The Winter Lock-In | Free live session before Ramadan</title>
+  <meta name="description" content="Short days, long nights, fewer distractions. A free 60-minute live session on three winter habits to lock in before Ramadan. Wednesday 9 December, 7pm UK." />
+  <meta name="robots" content="index, follow" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <meta name="theme-color" content="#0E1A2B" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="The Winter Lock-In" />
+  <meta property="og:locale" content="en_GB" />
+  <meta property="og:title" content="The Winter Lock-In: a free live session before Ramadan" />
+  <meta property="og:description" content="Short days, long nights, fewer distractions. One free hour on three winter habits to lock in before Ramadan. Wednesday 9 December, 7pm UK." />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="The Winter Lock-In: a free live session before Ramadan" />
+  <meta name="twitter:description" content="Short days, long nights, fewer distractions. One free hour on three winter habits to lock in before Ramadan. Wednesday 9 December, 7pm UK." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="/config.js"></script>
+</head>
+<body>
+<header class="hero">
+  <div class="blob b1" aria-hidden="true"></div><div class="blob b2" aria-hidden="true"></div>
+  <canvas class="snow" id="snow" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <p class="brand"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M16 3v26M4.7 9.5l22.6 13M27.3 9.5l-22.6 13M16 8l-3-3M16 8l3-3M16 24l-3 3M16 24l3 3M9 12l-4-1M9 12l-1-4M23 20l4 1M23 20l1 4M23 12l4-1M23 12l1-4M9 20l-4 1M9 20l-1 4"/></svg>The Winter Lock-In</p>
+    <p class="eyebrow">Free live session with Yasin Munye</p>
+    <h1>Lock in this winter. <em>Walk into Ramadan ready.</em></h1>
+    <p class="promise">Short days, long nights, fewer distractions. One free hour on three winter habits you can start the next morning, so Ramadan isn't a cold start.</p>
+    <div class="when">
+      <p class="date" id="dateLine">Wednesday 9 December</p>
+      <p class="zones" id="zones">7:00pm UK time</p>
+      <p class="local" id="localTime"></p>
+    </div>
+    <div class="meta"><span class="chip">Free</span><span class="chip">Live on Zoom</span><span class="chip">About 60 min</span><span class="chip">Replay if you sign up</span></div>
+    <div>
+      <a class="btn btn-ice" href="#register">Save my free seat</a>
+    </div>
+  </div>
+</header>
+
+<section class="band formband" id="register" aria-labelledby="regTitle">
+  <div class="wrap">
+    <div class="card" id="formCard">
+      <h2 id="regTitle">Save your seat</h2>
+      <p class="hint" id="regSub" style="margin-top:-8px">The Winter Lock-In, Wednesday 9 December at 7:00pm UK</p>
+      <form id="regForm" novalidate>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="field">
+            <label for="fname">First name</label>
+            <input type="text" id="fname" name="first_name" autocomplete="given-name" required>
+            <p class="err" id="fnameErr" hidden>Please add your first name.</p>
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" autocomplete="email" inputmode="email" required>
+            <p class="err" id="emailErr" hidden>Please check your email address, for example name@gmail.com.</p>
+          </div>
+          <div class="field">
+            <label for="wa">WhatsApp number</label>
+            <input type="tel" id="wa" name="whatsapp" autocomplete="tel" inputmode="tel" placeholder="+44 7700 900123" required>
+            <p class="hint">With your country code. We only use it for your reminders and the replay link.</p>
+            <p class="err" id="waErr" hidden>Please add your number with the country code, for example +44 7700 900123.</p>
+          </div>
+          <input type="hidden" name="source" id="source" value="winterlockin">
+          <div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="website">Leave this empty</label><input type="text" id="website" name="website" tabindex="-1" autocomplete="off"></div>
+          <button class="btn btn-night" type="submit" id="submitBtn">Save my free seat</button>
+          <p class="err" id="submitErr" role="alert" hidden>We couldn't save your seat just now. Please check your connection and try again.</p>
+          <p class="privacy">Free. We'll only message you on WhatsApp about this session, and you can opt out at any time. <a href="/privacy">Privacy</a></p>
+        </div>
+      </form>
+
+      <div class="thanks" id="thanks" hidden>
+        <div class="tick" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h2 id="thanksTitle" tabindex="-1">You're in.</h2>
+        <p class="lead" id="thanksWhen">See you on Wednesday 9 December at 7:00pm UK time. Check WhatsApp for your confirmation. The join link comes on the day.</p>
+        <div class="row">
+          <a class="btn btn-night" id="gcal" href="#" target="_blank" rel="noopener">Add to Google Calendar</a>
+          <button class="btn btn-ghost" type="button" id="ics">Add to Apple or Outlook calendar</button>
+          <a class="btn btn-ghost" id="waJoin" href="#" target="_blank" rel="noopener">Follow our WhatsApp channel</a>
+        </div>
+        <div class="trial" id="trialCard">
+          <p class="trial-k">While you wait</p>
+          <h3>Try Ilmi Online free for 10 days</h3>
+          <p>Join Yasin's weekly live classes and Q&amp;A, and get the full recordings library. Cancel before day 10 and you won't pay anything.</p>
+          <a class="btn btn-ice" id="trialBtn" href="#" target="_blank" rel="noopener">Start my 10-day free trial</a>
+        </div>
+        <div class="share">
+          <p><b>Bring a friend.</b> Winter is easier with company. Send this to one person you'd like to lock in with.</p>
+          <a class="btn btn-ghost" id="waShare" href="#" target="_blank" rel="noopener">Share on WhatsApp</a>
+          <button class="btn btn-ghost" type="button" id="copyLink">Copy the link</button>
+          <p class="hint" id="copyMsg" hidden></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" aria-labelledby="whyTitle">
+  <div class="wrap">
+    <p class="kicker">Why winter</p>
+    <h2 id="whyTitle">Winter is the easiest season to build a habit</h2>
+    <p class="lead">The days are short, the nights are long, and there's less pulling you out of the house. This year winter runs straight into Ramadan, so whatever you lock in now, you carry in with you.</p>
+    <div class="clock" role="img" aria-label="London on 21 December: about 7 hours 50 minutes of daylight and 16 hours 10 minutes of night.">
+      <div class="bar"><span class="n" style="flex:8.1">Night</span><span class="d" style="flex:7.83">Day 7h 50m</span><span class="n" style="flex:8.07">Night</span></div>
+      <p class="cap">London, 21 December: under 8 hours of daylight and over 16 hours of night. A fast that day lasts about 10 hours.</p>
+    </div>
+    <a class="btn btn-night" href="#register">Save my free seat</a>
+  </div>
+</section>
+
+<section class="band" aria-labelledby="habitsTitle">
+  <div class="wrap">
+    <p class="kicker">What you'll leave with</p>
+    <h2 id="habitsTitle">Three winter habits, each with a first step for the next day</h2>
+    <ul class="habits">
+      <li class="habit">
+        <span class="tag">Fasting</span>
+        <h3>Fast while the days are short</h3>
+        <p class="why">A December fast in the UK is about 10 hours. It's the gentlest practice run you'll get before Ramadan.</p>
+        <p class="tomorrow"><b>Start this week</b>Pick your day tonight. In winter it's over almost before you feel hungry.</p>
+      </li>
+      <li class="habit">
+        <span class="tag">Nights</span>
+        <h3>Put the long nights to work</h3>
+        <p class="why">Sixteen hours of darkness leaves room for a few quiet minutes before bed or before dawn. You'll learn how to claim them and keep them.</p>
+        <p class="tomorrow"><b>Start tonight</b>Take five quiet minutes before you sleep, with your phone in another room. On the night you'll learn what to fill them with.</p>
+      </li>
+      <li class="habit">
+        <span class="tag">Mornings and afternoons</span>
+        <h3>Guard the two ends of the day</h3>
+        <p class="why">When the day is this short, the early morning and the late afternoon carry it. Hold those two and the rest follows.</p>
+        <p class="tomorrow"><b>Start tomorrow</b>Set your alarm for before sunrise tonight, and get up when it goes off.</p>
+      </li>
+    </ul>
+    <a class="btn btn-night" href="#register">Save my free seat</a>
+  </div>
+</section>
+
+<section class="band" aria-labelledby="hostTitle">
+  <div class="wrap">
+    <p class="kicker">Your host</p>
+    <div class="host">
+      <div class="photo"><img src="/images/host.webp" alt="Yasin Munye" width="108" height="144" loading="lazy"></div>
+      <div>
+        <h3 id="hostTitle">Yasin Munye</h3>
+        <p class="handle">@yasin_munye</p>
+      </div>
+    </div>
+    <ul class="facts">
+      <li>Teaches the live weekly classes at Ilmi Online.</li>
+      <li>Graduated from King Abdulaziz University, Jeddah.</li>
+      <li>Has studied for over 10 years.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" aria-labelledby="afterTitle">
+  <div class="wrap">
+    <p class="kicker">After you sign up</p>
+    <h2 id="afterTitle">What happens next</h2>
+    <ol class="steps">
+      <li><span class="num">1</span><div><h3>A confirmation on WhatsApp</h3><p>It arrives straight away, so you know your seat is saved.</p></div></li>
+      <li><span class="num">2</span><div><h3>Reminders as it gets close</h3><p>Two days before, the day before, and the join link an hour before we start.</p></div></li>
+      <li><span class="num">3</span><div><h3>Join live</h3><p>About 60 minutes on Zoom, with time for your questions in the written Q&amp;A.</p></div></li>
+      <li><span class="num">4</span><div><h3>Missed it? Watch the replay</h3><p>We send the replay link to everyone who signed up.</p></div></li>
+    </ol>
+  </div>
+</section>
+
+<section class="band" aria-labelledby="faqTitle">
+  <div class="wrap">
+    <p class="kicker">Questions</p>
+    <h2 id="faqTitle">Before you sign up</h2>
+    <div>
+      <details><summary>Is it really free?</summary><div class="ans"><p>Yes. There's nothing to pay and we don't ask for card details.</p></div></details>
+      <details><summary>Who is it for?</summary><div class="ans"><p>Anyone who wants to reach Ramadan with their habits already in place. Men and women are both welcome. Only the host is on camera, and you ask your questions in writing.</p></div></details>
+      <details><summary>Will there be a replay?</summary><div class="ans"><p>Yes. Everyone who signs up gets the replay link, so sign up even if you can't make it live.</p></div></details>
+      <details><summary>What time is it where I live?</summary><div class="ans"><p id="faqTime">Wednesday 9 December at 7:00pm UK time.</p></div></details>
+      <details><summary>Do I need to download Zoom?</summary><div class="ans"><p>No. You can join from the free Zoom app or from your phone's browser. The link comes by WhatsApp.</p></div></details>
+      <details><summary>Why do you need my WhatsApp number?</summary><div class="ans"><p>Only to send you the reminders, the join link and the replay. You can opt out at any time.</p></div></details>
+      <details><summary>Who runs this?</summary><div class="ans"><p>The Winter Lock-In is a free session from Ilmi Online, hosted by Yasin Munye.</p></div></details>
+    </div>
+  </div>
+</section>
+
+<button type="button" class="totop off" id="toTop" aria-label="Back to top"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+
+<div class="foot-outer">
+<footer>
+  <div class="wrap">
+    <h2 class="f-cta">Ramadan is expected around <span class="f-date">8 February</span>. Start this winter.</h2>
+    <p class="f-tag">One free hour, three habits, and a first step you can take the next morning.</p>
+    <a class="btn btn-ice f-btn" href="#register">Save my free seat</a>
+    <div class="f-rule"></div>
+    <div class="f-bottom">
+      <p>© <span id="fYear">2026</span> The Winter Lock-In, a free session from Ilmi Online.</p>
+      <nav class="f-links" aria-label="Legal"><a href="/privacy">Privacy</a></nav>
+    </div>
+  </div>
+</footer>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

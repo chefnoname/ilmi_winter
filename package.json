@@ -1,0 +1,11 @@
+{
+  "name": "winter-lock-in",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "The Winter Lock-In: standalone sign-up page for the free live session.",
+  "engines": { "node": "22.x" },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}
