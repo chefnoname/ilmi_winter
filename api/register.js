@@ -2,6 +2,8 @@
  * POST /api/register
  * Sign-ups from the winter webinar page. Checks the details, tidies the WhatsApp number
  * (country code, digits only, e.g. 447700900123) and saves the sign-up in Chakra.
+ * The page's country picker always sends the number with its country code ("+44..."). A number
+ * that arrives without one is refused: guessing the country would save a number WhatsApp can't reach.
  *
  * Body: { first_name, email, whatsapp, trial_interest?, source?, event_id?, website? }
  * `website` is a hidden honeypot field: bots fill it in, people don't.
@@ -46,13 +48,17 @@ const json = (body, status = 200) =>
 
 const str = (v, max) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
-/** "+44 7700 900123", "0044...", "07700..." -> "447700900123". UK numbers without a code get 44. */
+/** "+44 7700 900123" or "0044 7700 900123" -> "447700900123". No country code (no + or 00 in front) -> null. */
 export function normalisePhone(input) {
-  let digits = input.replace(/\D/g, "");
-  if (digits.startsWith("00")) digits = digits.replace(/^00/, "");
-  else if (!input.trim().startsWith("+") && digits.startsWith("0")) digits = "44" + digits.slice(1);
-  return /^\d{8,15}$/.test(digits) ? digits : null;
+  const code = input.trim().match(/^(\+|00)/);
+  if (!code) return null;
+  const digits = input.replace(/\D/g, "").slice(code[1] === "00" ? 2 : 0);
+  return /^[1-9]\d{7,14}$/.test(digits) ? digits : null;
 }
+
+/** Does Chakra's reply show our number on the lead? Looks at the lead's fields only to answer yes or no. */
+const hasPhone = (fields, phone) =>
+  !!fields && Object.values(fields).some(v => typeof v === "string" && v.replace(/\D/g, "") === phone);
 
 function post(url, body, token) {
   return fetch(url, {
@@ -90,13 +96,24 @@ async function sendToChakra(p, env) {
 
   const lead = await post(`${CHAKRA}/lead/process`, { data }, key);
   if (!lead.ok) throw new Error(`Chakra lead/process returned ${lead.status}`);
+  const saved = (await lead.json().catch(() => null))?._data;
 
   const camp = await post(`${CHAKRA}/lead/add-phone-number-to-campaign`,
     { campaignId: campaignFor(Date.now(), env), phoneNumber: p.phone }, key);
   if (camp.status >= 500) throw new Error(`Chakra campaign add returned ${camp.status}`);
   // A 4xx here usually means they're already in the campaign (signed up twice): the lead
   // is saved, so don't show the person an error, just log it.
-  if (!camp.ok) console.warn(`register: campaign add returned ${camp.status}`);
+  if (!camp.ok) return console.warn(`register: campaign add returned ${camp.status}`);
+
+  // What Chakra answered, as yes/no facts only (never the number, name or email), so a sign-up that
+  // was saved but can't be messaged shows up in the logs.
+  const added = (await camp.json().catch(() => null))?._data;
+  const inCampaign = added?.process;
+  const which = added?.wasCreated ? "a new lead" : inCampaign?.data?.lead_id && inCampaign.data.lead_id === saved?.data?.lead_id ? "the same lead" : "another lead";
+  const facts = `number on the saved lead: ${hasPhone(saved?.data, p.phone) ? "yes" : "no"}; campaign used ${which}, ` +
+    `number on it: ${hasPhone(inCampaign?.data, p.phone) ? "yes" : "no"}, contact linked: ${inCampaign?.contact || inCampaign?.contacts ? "yes" : "no"}`;
+  if (hasPhone(saved?.data, p.phone) && hasPhone(inCampaign?.data, p.phone)) console.log(`register: saved in Chakra (${facts})`);
+  else console.warn(`register: saved in Chakra, but check the lead (${facts})`);
 }
 
 const sha256 = (v) => createHash("sha256").update(v).digest("hex");

@@ -106,5 +106,135 @@ rep("""const stamp = d => d.toISOString().replace(/[-:]/g,"").replace(/\\.\\d{3}
 })();
 """)
 
+# ===== Country picker for the WhatsApp number (21 Nov 2026) =====
+# The visitor picks their country and the page adds its dialling code, so every number reaches
+# Chakra with a country code. Nothing is chosen at the start, and choosing is required.
+
+# --- styles for the picker and the dialling code box
+rep(r"""input:focus{outline:none;border-color:var(--steel);box-shadow:0 0 0 3px var(--ice-soft)}
+""",
+r"""input:focus{outline:none;border-color:var(--steel);box-shadow:0 0 0 3px var(--ice-soft)}
+/* country picker and dialling code beside the WhatsApp number */
+select{font:inherit;font-size:16px;min-height:52px;padding:12px 40px 12px 14px;border:1.5px solid var(--mist);border-radius:12px;background:var(--snow) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%235C6B7C' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center;color:var(--ink);width:100%;-webkit-appearance:none;appearance:none;cursor:pointer;text-overflow:ellipsis}
+select:invalid{color:var(--slate)}
+select option,select optgroup{color:var(--ink)}
+select:focus{outline:none;border-color:var(--steel);box-shadow:0 0 0 3px var(--ice-soft)}
+.tel{display:flex;gap:8px}
+.tel input{min-width:0}
+.dial{flex:none;display:flex;align-items:center;justify-content:center;min-width:64px;min-height:52px;padding:0 12px;border:1.5px solid var(--mist);border-radius:12px;background:var(--frost);color:var(--slate);font-size:16px;font-weight:500}
+.dial.on{color:var(--ink)}
+""")
+
+# --- the field: country picker, dialling code box, number box, new hint and messages
+rep(r"""            <input type="tel" id="wa" name="whatsapp" autocomplete="tel" inputmode="tel" placeholder="+44 7700 900123" required>
+            <p class="hint">With your country code. We only use it for the reminder and the replay link.</p>
+            <p class="err" id="waErr" hidden>Please add your number with the country code, for example +44 7700 900123.</p>""",
+r"""            <select id="cc" name="country" autocomplete="tel-country-code" aria-label="Country of your WhatsApp number" required>
+              <option value="">Choose your country</option>
+            </select>
+            <p class="err" id="ccErr" hidden>Please choose your country.</p>
+            <div class="tel">
+              <span class="dial" id="dial" aria-hidden="true">+</span>
+              <input type="tel" id="wa" name="whatsapp" autocomplete="tel-national" inputmode="tel" placeholder="Phone number" required>
+            </div>
+            <p class="hint">Choose your country and we add the code for you. We only use it for the reminder and the replay link.</p>
+            <p class="err" id="waErr" hidden>Please check your WhatsApp number. It should match the country you chose.</p>""")
+
+# --- the number checker, loaded on the side
+rep(r"""<script>
+/* ===== Settings: change these, nothing else ===== */""",
+r"""<!-- Checks phone numbers against each country's rules (libphonenumber-js 1.13.17, MIT, unchanged from npm).
+     Loaded on the side: the form still works with simpler checks if it has not arrived. -->
+<script async src="/vendor/libphonenumber-min-1.13.17.js"></script>
+<script>
+/* ===== Settings: change these, nothing else ===== */""")
+
+# --- the picker itself, reading the number, and the checks before sending
+rep(r"""/* validation */
+const show = (id, bad) => { $(id).hidden = !bad; return bad; };
+function validate(){
+  const f = $("fname").value.trim(), e = $("email").value.trim(), w = $("wa").value.replace(/[\s()-]/g,"");
+  const bad = [
+    show("fnameErr", f.length < 1),
+    show("emailErr", !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)),
+    show("waErr", !/^\+?\d{8,15}$/.test(w))
+  ];
+  const first = ["fname","email","wa"][bad.indexOf(true)];
+  if (first) $(first).focus();
+  return !bad.includes(true);
+}
+""",
+r"""/* country picker for the WhatsApp number. No country is chosen at the start: the visitor picks theirs
+   and we add its dialling code, so every number reaches us with a country code.
+   Each entry is country:dialling code:name. TOP lists the four that also sit at the top of the picker. */
+const COUNTRIES = "AF:93:Afghanistan|AX:358:Aland Islands|AL:355:Albania|DZ:213:Algeria|AS:1:American Samoa|AD:376:Andorra|AO:244:Angola|AI:1:Anguilla|AG:1:Antigua & Barbuda|AR:54:Argentina|AM:374:Armenia|AW:297:Aruba|AC:247:Ascension Island|AU:61:Australia|AT:43:Austria|AZ:994:Azerbaijan|BS:1:Bahamas|BH:973:Bahrain|BD:880:Bangladesh|BB:1:Barbados|BY:375:Belarus|BE:32:Belgium|BZ:501:Belize|BJ:229:Benin|BM:1:Bermuda|BT:975:Bhutan|BO:591:Bolivia|BA:387:Bosnia & Herzegovina|BW:267:Botswana|BR:55:Brazil|IO:246:British Indian Ocean Territory|VG:1:British Virgin Islands|BN:673:Brunei|BG:359:Bulgaria|BF:226:Burkina Faso|BI:257:Burundi|KH:855:Cambodia|CM:237:Cameroon|CA:1:Canada|CV:238:Cape Verde|BQ:599:Caribbean Netherlands|KY:1:Cayman Islands|CF:236:Central African Republic|TD:235:Chad|CL:56:Chile|CN:86:China|CX:61:Christmas Island|CC:61:Cocos (Keeling) Islands|CO:57:Colombia|KM:269:Comoros|CD:243:Congo (DRC)|CG:242:Congo (Republic)|CK:682:Cook Islands|CR:506:Costa Rica|HR:385:Croatia|CU:53:Cuba|CW:599:Curacao|CY:357:Cyprus|CZ:420:Czechia|DK:45:Denmark|DJ:253:Djibouti|DM:1:Dominica|DO:1:Dominican Republic|EC:593:Ecuador|EG:20:Egypt|SV:503:El Salvador|GQ:240:Equatorial Guinea|ER:291:Eritrea|EE:372:Estonia|SZ:268:Eswatini|ET:251:Ethiopia|FK:500:Falkland Islands|FO:298:Faroe Islands|FJ:679:Fiji|FI:358:Finland|FR:33:France|GF:594:French Guiana|PF:689:French Polynesia|GA:241:Gabon|GM:220:Gambia|GE:995:Georgia|DE:49:Germany|GH:233:Ghana|GI:350:Gibraltar|GR:30:Greece|GL:299:Greenland|GD:1:Grenada|GP:590:Guadeloupe|GU:1:Guam|GT:502:Guatemala|GG:44:Guernsey|GN:224:Guinea|GW:245:Guinea-Bissau|GY:592:Guyana|HT:509:Haiti|HN:504:Honduras|HK:852:Hong Kong|HU:36:Hungary|IS:354:Iceland|IN:91:India|ID:62:Indonesia|IR:98:Iran|IQ:964:Iraq|IE:353:Ireland|IM:44:Isle of Man|IL:972:Israel|IT:39:Italy|CI:225:Ivory Coast|JM:1:Jamaica|JP:81:Japan|JE:44:Jersey|JO:962:Jordan|KZ:7:Kazakhstan|KE:254:Kenya|KI:686:Kiribati|XK:383:Kosovo|KW:965:Kuwait|KG:996:Kyrgyzstan|LA:856:Laos|LV:371:Latvia|LB:961:Lebanon|LS:266:Lesotho|LR:231:Liberia|LY:218:Libya|LI:423:Liechtenstein|LT:370:Lithuania|LU:352:Luxembourg|MO:853:Macao|MG:261:Madagascar|MW:265:Malawi|MY:60:Malaysia|MV:960:Maldives|ML:223:Mali|MT:356:Malta|MH:692:Marshall Islands|MQ:596:Martinique|MR:222:Mauritania|MU:230:Mauritius|YT:262:Mayotte|MX:52:Mexico|FM:691:Micronesia|MD:373:Moldova|MC:377:Monaco|MN:976:Mongolia|ME:382:Montenegro|MS:1:Montserrat|MA:212:Morocco|MZ:258:Mozambique|MM:95:Myanmar|NA:264:Namibia|NR:674:Nauru|NP:977:Nepal|NL:31:Netherlands|NC:687:New Caledonia|NZ:64:New Zealand|NI:505:Nicaragua|NE:227:Niger|NG:234:Nigeria|NU:683:Niue|NF:672:Norfolk Island|KP:850:North Korea|MK:389:North Macedonia|MP:1:Northern Mariana Islands|NO:47:Norway|OM:968:Oman|PK:92:Pakistan|PW:680:Palau|PS:970:Palestine|PA:507:Panama|PG:675:Papua New Guinea|PY:595:Paraguay|PE:51:Peru|PH:63:Philippines|PL:48:Poland|PT:351:Portugal|PR:1:Puerto Rico|QA:974:Qatar|RE:262:Reunion|RO:40:Romania|RU:7:Russia|RW:250:Rwanda|WS:685:Samoa|SM:378:San Marino|ST:239:Sao Tome & Principe|SA:966:Saudi Arabia|SN:221:Senegal|RS:381:Serbia|SC:248:Seychelles|SL:232:Sierra Leone|SG:65:Singapore|SX:1:Sint Maarten|SK:421:Slovakia|SI:386:Slovenia|SB:677:Solomon Islands|SO:252:Somalia|ZA:27:South Africa|KR:82:South Korea|SS:211:South Sudan|ES:34:Spain|LK:94:Sri Lanka|BL:590:St Barthelemy|SH:290:St Helena|KN:1:St Kitts & Nevis|LC:1:St Lucia|MF:590:St Martin|PM:508:St Pierre & Miquelon|VC:1:St Vincent & the Grenadines|SD:249:Sudan|SR:597:Suriname|SJ:47:Svalbard & Jan Mayen|SE:46:Sweden|CH:41:Switzerland|SY:963:Syria|TW:886:Taiwan|TJ:992:Tajikistan|TZ:255:Tanzania|TH:66:Thailand|TL:670:Timor-Leste|TG:228:Togo|TK:690:Tokelau|TO:676:Tonga|TT:1:Trinidad & Tobago|TA:290:Tristan da Cunha|TN:216:Tunisia|TR:90:Turkey|TM:993:Turkmenistan|TC:1:Turks & Caicos Islands|TV:688:Tuvalu|UG:256:Uganda|UA:380:Ukraine|AE:971:United Arab Emirates|GB:44:United Kingdom|US:1:United States|UY:598:Uruguay|VI:1:US Virgin Islands|UZ:998:Uzbekistan|VU:678:Vanuatu|VA:39:Vatican City|VE:58:Venezuela|VN:84:Vietnam|WF:681:Wallis & Futuna|EH:212:Western Sahara|YE:967:Yemen|ZM:260:Zambia|ZW:263:Zimbabwe".split("|").map(c => c.split(":"));
+const TOP = ["GB","US","CA","AU"];
+const MAIN = {1:"US",7:"RU",39:"IT",44:"GB",47:"NO",61:"AU",212:"MA",262:"RE",290:"SH",358:"FI",590:"GP",599:"CW"};  // codes shared by several countries
+const dialOf = iso => (COUNTRIES.find(c => c[0] === iso) || [])[1] || "";
+const showDial = () => { const d = dialOf($("cc").value); $("dial").textContent = "+" + d; $("dial").classList.toggle("on", !!d); };
+(function(){
+  const opt = c => new Option(`${c[2]} (+${c[1]})`, c[0]);
+  const all = document.createElement("optgroup"); all.label = "All countries";
+  TOP.forEach(iso => $("cc").add(opt(COUNTRIES.find(c => c[0] === iso))));
+  COUNTRIES.forEach(c => all.appendChild(opt(c)));
+  $("cc").appendChild(all);
+  $("cc").addEventListener("change", showDial);
+})();
+/* set the picker from a number typed with its own code, e.g. +44... */
+function pickCountry(iso, code){
+  if (!dialOf(iso)) iso = MAIN[code] || (COUNTRIES.find(c => c[1] === String(code)) || [])[0];
+  if (iso) { $("cc").value = iso; showDial(); }
+}
+/* Reads the picker and the number box. Gives back the full number with its country code
+   ("+447700900123"), or "" when it does not make a real number for that country.
+   A number typed with its own code (+44... or 0044...) is taken as typed and sets the picker. */
+function waNumber(tidy){
+  const raw = $("wa").value.trim(), typed = /^(\+|00)/.test(raw), iso = $("cc").value;
+  if (!raw || (!typed && !iso)) return "";
+  const text = typed ? raw.replace(/^00/, "+") : raw;
+  if (window.libphonenumber) {
+    let p = null;
+    try { p = libphonenumber.parsePhoneNumberFromString(text, typed ? undefined : iso); } catch(e){}
+    if (!p || !p.isValid()) return "";
+    if (typed) {
+      pickCountry(p.country, p.countryCallingCode);
+      if (tidy) $("wa").value = p.formatInternational().replace("+" + p.countryCallingCode, "").trim();
+    }
+    return p.number;
+  }
+  /* the checker has not loaded: simpler rules */
+  let digits = text.replace(/\D/g, "");
+  if (typed) {
+    const c = COUNTRIES.filter(c => digits.startsWith(c[1])).sort((a, b) => b[1].length - a[1].length)[0];
+    if (!c) return "";
+    pickCountry("", c[1]);
+  } else digits = dialOf(iso) + digits.replace(/^0+/, "");
+  return /^[1-9]\d{7,14}$/.test(digits) ? "+" + digits : "";
+}
+$("wa").addEventListener("change", () => waNumber(true));
+
+/* validation */
+const show = (id, bad) => { $(id).hidden = !bad; return bad; };
+let waFull = "";   // the checked number, with its country code, as it is sent
+function validate(){
+  const f = $("fname").value.trim(), e = $("email").value.trim(), w = $("wa").value.trim();
+  waFull = waNumber(false);
+  const noCountry = !$("cc").value && !/^(\+|00)/.test(w);
+  const bad = [
+    show("fnameErr", f.length < 1),
+    show("emailErr", !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)),
+    show("ccErr", noCountry),
+    show("waErr", !w || (!noCountry && !waFull))
+  ];
+  const first = ["fname","email","cc","wa"][bad.indexOf(true)];
+  if (first) $(first).focus();
+  return !bad.includes(true);
+}
+""")
+
+# --- send the checked number, with its country code
+rep(r"""    whatsapp: $("wa").value.trim(),""",
+r"""    whatsapp: waFull,                // country code + number, from the picker (see waNumber above)""")
+
 open(NEW, "w", encoding="utf-8").write(out)
 print("written", NEW, len(out.encode("utf-8")), "bytes")

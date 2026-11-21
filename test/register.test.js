@@ -5,7 +5,7 @@ import http from "node:http";
 import { createHash } from "node:crypto";
 import handler, { normalisePhone, campaignFor } from "../api/register.js";
 
-let server, base, hits = [], nextStatus = 200, metaStatus = 200, metaReply = "{}";
+let server, base, hits = [], nextStatus = 200, metaStatus = 200, metaReply = "{}", chakraReply = null;
 before(async () => {
   server = http.createServer((req, res) => {
     let body = "";
@@ -14,7 +14,7 @@ before(async () => {
       hits.push({ url: req.url, auth: req.headers.authorization, body: JSON.parse(body || "{}") });
       const meta = req.url.endsWith("/events");
       res.writeHead(meta ? metaStatus : nextStatus, { "Content-Type": "application/json" });
-      res.end(meta ? metaReply : "{}");
+      res.end(meta ? metaReply : JSON.stringify(chakraReply?.(req.url) ?? {}));
     });
   });
   await new Promise(r => server.listen(0, "127.0.0.1", r));
@@ -22,7 +22,7 @@ before(async () => {
 });
 after(() => server.close());
 beforeEach(() => {
-  hits = []; nextStatus = 200; metaStatus = 200; metaReply = "{}";
+  hits = []; nextStatus = 200; metaStatus = 200; metaReply = "{}"; chakraReply = null;
   for (const k of ["CHAKRA_API_KEY", "CHAKRA_WINTER_CAMPAIGN_ID", "CHAKRA_ATTR_EVENT", "CHAKRA_ATTR_TRIAL", "CHAKRA_ATTR_SOURCE", "REGISTER_FORWARD_URL", "CHAKRA_WINTER_CAMPAIGN_ID_48H", "CHAKRA_WINTER_CAMPAIGN_ID_24H", "META_CAPI_TOKEN"]) delete process.env[k];
 });
 
@@ -31,14 +31,22 @@ const call = (body, method = "POST", headers = {}) =>
     method, headers: { "Content-Type": "application/json", ...headers },
     body: method === "POST" ? (typeof body === "string" ? body : JSON.stringify(body)) : undefined,
   }));
-const good = { first_name: " Amina ", email: "Amina@Example.com", whatsapp: "07700 900123", trial_interest: "Maybe", source: "meta" };
+const good = { first_name: " Amina ", email: "Amina@Example.com", whatsapp: "+44 7700 900123", trial_interest: "Maybe", source: "meta" };
 
 test("phone numbers are tidied to country code + digits", () => {
   assert.equal(normalisePhone("+44 7700 900123"), "447700900123");
-  assert.equal(normalisePhone("07700 900123"), "447700900123");
+  assert.equal(normalisePhone("+447700900123"), "447700900123");
   assert.equal(normalisePhone("0044 7700 900123"), "447700900123");
   assert.equal(normalisePhone("+1 (415) 555-0123"), "14155550123");
-  assert.equal(normalisePhone("12345"), null);
+  assert.equal(normalisePhone("+12345"), null);
+});
+
+test("a number without a country code is refused, not guessed", () => {
+  assert.equal(normalisePhone("07700 900123"), null);      // UK style, no code
+  assert.equal(normalisePhone("7700900123"), null);
+  assert.equal(normalisePhone("416 555 0123"), null);       // Canada style, no code
+  assert.equal(normalisePhone("447700900123"), null);       // looks like a code, but nothing says so
+  assert.equal(normalisePhone("+0 7700 900123"), null);     // no country code starts with 0
 });
 
 test("forwards a valid sign-up to the main site", async () => {
@@ -84,7 +92,9 @@ test("rejects bad input and sends nothing on", async () => {
   process.env.REGISTER_FORWARD_URL = `${base}/x`;
   assert.equal((await call({ ...good, first_name: "" })).status, 400);
   assert.equal((await call({ ...good, email: "nope" })).status, 400);
-  assert.equal((await call({ ...good, whatsapp: "123" })).status, 400);
+  assert.equal((await call({ ...good, whatsapp: "+123" })).status, 400);
+  assert.equal((await call({ ...good, whatsapp: "07700 900123" })).status, 400);
+  assert.equal((await call({ ...good, whatsapp: "416 555 0123" })).status, 400);
   assert.equal((await call("not json")).status, 400);
   assert.equal((await call("x".repeat(3000))).status, 413);
   assert.equal((await call(null, "GET")).status, 405);
@@ -240,4 +250,46 @@ test("Meta is not told when the sign-up could not be saved, or for bots and bad 
   await call({ ...good, event_id: EVENT_ID, website: "http://spam" });
   await call({ ...good, event_id: EVENT_ID, email: "nope" });
   assert.equal(metaHits().length, 0);
+});
+
+// ---- What Chakra answered, in the logs
+
+function withChakra(t) {
+  process.env.CHAKRA_API_KEY = "test-key";
+  process.env.CHAKRA_WINTER_CAMPAIGN_ID = "camp-1";
+  const realFetch = globalThis.fetch;
+  const logged = [], realLog = console.log, realWarn = console.warn;
+  t.after(() => { globalThis.fetch = realFetch; console.log = realLog; console.warn = realWarn; });
+  globalThis.fetch = (url, init) => realFetch(String(url).replace("https://api.chakrahq.com", base), init);
+  console.log = (...a) => logged.push("log: " + a.join(" "));
+  console.warn = (...a) => logged.push("warn: " + a.join(" "));
+  return logged;
+}
+const lead = (id, fields = {}) => ({ data: { lead_id: id, name: "Amina", ...fields }, contact: null, contacts: null });
+
+test("logs that Chakra kept the number, as yes/no facts and nothing personal", async (t) => {
+  const logged = withChakra(t);
+  chakraReply = url => url.endsWith("/lead/process")
+    ? { _data: lead("LEAD-000052", { phone_number: "+447700900123", email: "amina@example.com" }) }
+    : { _data: { wasCreated: false, process: lead("LEAD-000052", { phone_number: "+447700900123" }) } };
+  assert.equal((await call(good)).status, 200);
+  assert.deepEqual(logged, ["log: register: saved in Chakra (number on the saved lead: yes; campaign used the same lead, number on it: yes, contact linked: no)"]);
+});
+
+test("warns when Chakra saved the lead without the number", async (t) => {
+  const logged = withChakra(t);
+  chakraReply = url => url.endsWith("/lead/process")
+    ? { _data: lead("LEAD-000052", { email: "amina@example.com" }) }
+    : { _data: { wasCreated: true, process: lead("LEAD-000053") } };
+  assert.equal((await call(good)).status, 200);
+  assert.equal(logged.length, 1);
+  assert.match(logged[0], /^warn: register: saved in Chakra, but check the lead \(number on the saved lead: no; campaign used a new lead, number on it: no, contact linked: no\)$/);
+  for (const personal of ["447700900123", "7700", "amina", "Amina", "LEAD-", "test-key"]) assert.ok(!logged[0].includes(personal), personal);
+});
+
+test("a reply from Chakra that is not what we expect never breaks the sign-up", async (t) => {
+  const logged = withChakra(t);
+  chakraReply = () => ["unexpected"];
+  assert.equal((await call(good)).status, 200);
+  assert.match(logged[0], /^warn: register: saved in Chakra, but check the lead/);
 });
