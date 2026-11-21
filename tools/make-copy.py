@@ -114,30 +114,33 @@ rep("""const stamp = d => d.toISOString().replace(/[-:]/g,"").replace(/\\.\\d{3}
 rep(r"""input:focus{outline:none;border-color:var(--steel);box-shadow:0 0 0 3px var(--ice-soft)}
 """,
 r"""input:focus{outline:none;border-color:var(--steel);box-shadow:0 0 0 3px var(--ice-soft)}
-/* country picker and dialling code beside the WhatsApp number */
-select{font:inherit;font-size:16px;min-height:52px;padding:12px 40px 12px 14px;border:1.5px solid var(--mist);border-radius:12px;background:var(--snow) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%235C6B7C' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center;color:var(--ink);width:100%;-webkit-appearance:none;appearance:none;cursor:pointer;text-overflow:ellipsis}
-select:invalid{color:var(--slate)}
-select option,select optgroup{color:var(--ink)}
-select:focus{outline:none;border-color:var(--steel);box-shadow:0 0 0 3px var(--ice-soft)}
+/* country picker beside the WhatsApp number: one small box that shows the flag and dialling code.
+   The real select lies invisibly on top of it, so a tap opens the phone's own list of countries. */
 .tel{display:flex;gap:8px}
 .tel input{min-width:0}
-.dial{flex:none;display:flex;align-items:center;justify-content:center;min-width:64px;min-height:52px;padding:0 12px;border:1.5px solid var(--mist);border-radius:12px;background:var(--frost);color:var(--slate);font-size:16px;font-weight:500}
+.cc{position:relative;flex:none}
+.dial{display:flex;align-items:center;min-height:52px;padding:0 34px 0 14px;border:1.5px solid var(--mist);border-radius:12px;background:var(--snow) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%235C6B7C' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;color:var(--slate);font-size:16px;font-weight:500;white-space:nowrap}
 .dial.on{color:var(--ink)}
+.cc select{position:absolute;top:0;left:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;font:inherit;font-size:16px;cursor:pointer;-webkit-appearance:none;appearance:none}
+.cc:focus-within .dial{border-color:var(--steel);box-shadow:0 0 0 3px var(--ice-soft)}
+@media (max-width:359px){.tel{gap:6px}.tel input{padding-inline:8px}.dial{padding:0 24px 0 8px;background-position:right 7px center;font-size:15px}}   /* the narrowest phones */
 """)
 
 # --- the field: country picker, dialling code box, number box, new hint and messages
 rep(r"""            <input type="tel" id="wa" name="whatsapp" autocomplete="tel" inputmode="tel" placeholder="+44 7700 900123" required>
             <p class="hint">With your country code. We only use it for the reminder and the replay link.</p>
             <p class="err" id="waErr" hidden>Please add your number with the country code, for example +44 7700 900123.</p>""",
-r"""            <select id="cc" name="country" autocomplete="tel-country-code" aria-label="Country of your WhatsApp number" required>
-              <option value="">Choose your country</option>
-            </select>
-            <p class="err" id="ccErr" hidden>Please choose your country.</p>
-            <div class="tel">
-              <span class="dial" id="dial" aria-hidden="true">+</span>
+r"""            <div class="tel">
+              <div class="cc">
+                <span class="dial" id="dial" aria-hidden="true">Country</span>
+                <select id="cc" name="country" autocomplete="tel-country-code" aria-label="Country of your WhatsApp number" required>
+                  <option value="">Choose your country</option>
+                </select>
+              </div>
               <input type="tel" id="wa" name="whatsapp" autocomplete="tel-national" inputmode="tel" placeholder="Phone number" required>
             </div>
             <p class="hint">Choose your country and we add the code for you. We only use it for the reminder and the replay link.</p>
+            <p class="err" id="ccErr" hidden>Please choose your country.</p>
             <p class="err" id="waErr" hidden>Please check your WhatsApp number. It should match the country you chose.</p>""")
 
 # --- the number checker, loaded on the side
@@ -171,7 +174,9 @@ const COUNTRIES = "AF:93:Afghanistan|AX:358:Aland Islands|AL:355:Albania|DZ:213:
 const TOP = ["GB","US","CA","AU"];
 const MAIN = {1:"US",7:"RU",39:"IT",44:"GB",47:"NO",61:"AU",212:"MA",262:"RE",290:"SH",358:"FI",590:"GP",599:"CW"};  // codes shared by several countries
 const dialOf = iso => (COUNTRIES.find(c => c[0] === iso) || [])[1] || "";
-const showDial = () => { const d = dialOf($("cc").value); $("dial").textContent = "+" + d; $("dial").classList.toggle("on", !!d); };
+const flagOf = iso => String.fromCodePoint(...[...iso].map(ch => 127397 + ch.charCodeAt(0)));   // "GB" -> its flag
+/* the small box shows the flag and code of the chosen country, or the word Country before one is chosen */
+const showDial = () => { const iso = $("cc").value, d = dialOf(iso); $("dial").textContent = d ? flagOf(iso) + " +" + d : "Country"; $("dial").classList.toggle("on", !!d); };
 (function(){
   const opt = c => new Option(`${c[2]} (+${c[1]})`, c[0]);
   const all = document.createElement("optgroup"); all.label = "All countries";
