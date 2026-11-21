@@ -3,8 +3,9 @@
  * Sign-ups from the winter webinar page. Checks the details, tidies the WhatsApp number
  * (country code, digits only, e.g. 447700900123) and saves the sign-up in Chakra.
  *
- * Body: { first_name, email, whatsapp, trial_interest?, source?, website? }
+ * Body: { first_name, email, whatsapp, trial_interest?, source?, event_id?, website? }
  * `website` is a hidden honeypot field: bots fill it in, people don't.
+ * `event_id` is the ID the page also gives the Meta pixel with its Lead event (see below).
  *
  * Two ways to reach Chakra, chosen by the environment variables set in Vercel:
  *   1. Direct: CHAKRA_API_KEY + CHAKRA_WINTER_CAMPAIGN_ID are set on this project.
@@ -16,7 +17,15 @@
  *      main site's sign-up endpoint, which already holds the Chakra key. Nothing secret is
  *      needed on this project and the Chakra logic lives in one place.
  * The API key is only ever read from the environment. It is never logged.
+ *
+ * Meta Conversions API (optional): when META_CAPI_TOKEN is set, a saved sign-up is also reported
+ * to Meta from here as a Lead, so it still counts when an ad blocker stops the browser pixel.
+ * It carries the page's event_id, so Meta counts the browser and server pair once. The email and
+ * number are sent hashed, never in the clear. A failure here never fails the sign-up, and the
+ * token is only ever read from the environment and never logged.
  */
+
+import { createHash } from "node:crypto";
 
 const MAX_BODY_BYTES = 2048;
 const EVENT = "winter-webinar-2026";
@@ -25,6 +34,9 @@ const TRIAL_ANSWERS = new Set(["Yes", "Maybe", "No"]);
 const CHAKRA = "https://api.chakrahq.com/v1/ext/procedure";
 const WEBINAR_START = Date.parse("2026-12-09T19:00:00Z");   // Wed 9 Dec, 7pm UK (GMT). Same as startUTC in index.html.
 const HOUR = 60 * 60 * 1000;
+// "Ilmi Pixel 26/27". The pixel ID is public: the same one is in index.html.
+const META_PIXEL_ID = "1004320156067073";
+const META_EVENTS = `https://graph.facebook.com/${META_PIXEL_ID}/events`;
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -87,6 +99,48 @@ async function sendToChakra(p, env) {
   if (!camp.ok) console.warn(`register: campaign add returned ${camp.status}`);
 }
 
+const sha256 = (v) => createHash("sha256").update(v).digest("hex");
+
+function cookie(req, name) {
+  const m = (req.headers.get("cookie") ?? "").match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+  return m ? m[1].slice(0, 300) : undefined;
+}
+
+/** Report the saved sign-up to Meta as a Lead (Conversions API). Best effort: never throws. */
+async function sendLeadToMeta(p, req, eventId, token) {
+  const referer = req.headers.get("referer");
+  const event = {
+    event_name: "Lead",
+    event_time: Math.floor(Date.now() / 1000),
+    event_id: eventId,
+    action_source: "website",
+    event_source_url: referer ? referer.slice(0, 500) : undefined,
+    user_data: {
+      em: [sha256(p.email)],
+      ph: [sha256(p.phone)],
+      client_ip_address: req.headers.get("x-real-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0].trim(),
+      client_user_agent: req.headers.get("user-agent") ?? undefined,
+      fbp: cookie(req, "_fbp"),
+      fbc: cookie(req, "_fbc"),
+    },
+    custom_data: { content_name: "winter-webinar" },
+  };
+  try {
+    const res = await fetch(META_EVENTS, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: [event], access_token: token }),
+      signal: AbortSignal.timeout(4000),
+    });
+    if (res.ok) return console.log("register: Meta accepted the Lead");
+    // Log Meta's error codes only: never the response text, the token or the person's details.
+    const err = (await res.json().catch(() => null))?.error ?? {};
+    console.warn(`register: Meta rejected the Lead: status ${res.status}, code ${Number(err.code) || "?"}, subcode ${Number(err.error_subcode) || "?"}`);
+  } catch (err) {
+    console.warn("register: Meta Lead not sent:", err instanceof Error ? err.name : "unknown error");
+  }
+}
+
 /** Pass the sign-up to the main site's endpoint, which saves it in Chakra. */
 async function forward(p, url) {
   const res = await post(url, {
@@ -128,6 +182,7 @@ async function handler(req) {
   const phone = normalisePhone(str(raw.whatsapp, 40));
   const trial = str(raw.trial_interest, 10);
   const source = str(raw.source, 60).replace(/[^\w.-]/g, "") || DEFAULT_SOURCE;
+  const eventId = /^[\w-]{8,64}$/.test(str(raw.event_id, 64)) ? str(raw.event_id, 64) : "";
 
   if (!firstName) return json({ error: "First name is required" }, 400);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return json({ error: "Email is not valid" }, 400);
@@ -156,6 +211,10 @@ async function handler(req) {
     console.error("register: could not save sign-up:", err instanceof Error ? err.message : "unknown error");
     return json({ error: "Could not save sign-up" }, 502);
   }
+
+  // Saved. Tell Meta too, but only when the page sent its event_id: without one the browser's
+  // Lead and this one could not be paired, and the sign-up would be counted twice.
+  if (env.META_CAPI_TOKEN && eventId) await sendLeadToMeta(payload, req, eventId, env.META_CAPI_TOKEN);
 
   return json({ ok: true });
 }

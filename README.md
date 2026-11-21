@@ -35,6 +35,16 @@ Set the variables from `.env.example` in Vercel under Settings, Environment Vari
 The snippet in `<head>` loads the pixel (PageView) on the live site only, not on a local copy or a Vercel preview link. The form sends
 the `Lead` event once the sign-up has been saved, so failed or invalid submissions are never counted.
 
+### Conversions API
+
+When `META_CAPI_TOKEN` is set in Vercel, `api/register.js` also reports each saved sign-up to Meta from the
+server, so it still counts when an ad blocker or the browser stops the pixel. The page makes one ID per
+sign-up and gives it to both the pixel and the function, and Meta uses it to count the pair once. The email
+and WhatsApp number are sent hashed (SHA-256), never in the clear, along with the visitor's IP address,
+browser and Meta cookies. If Meta refuses or cannot be reached the sign-up still succeeds, and the function
+logs Meta's error code only. To check it, sign up once and look for `register: Meta accepted the Lead` in
+the Vercel logs.
+
 ## Deploy
 
 Live at https://ilmi-winter.app. Vercel project `ilmi_winter`, connected to this repository: every push to

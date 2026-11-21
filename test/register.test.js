@@ -2,17 +2,19 @@
 import { test, before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
+import { createHash } from "node:crypto";
 import handler, { normalisePhone, campaignFor } from "../api/register.js";
 
-let server, base, hits = [], nextStatus = 200;
+let server, base, hits = [], nextStatus = 200, metaStatus = 200, metaReply = "{}";
 before(async () => {
   server = http.createServer((req, res) => {
     let body = "";
     req.on("data", c => (body += c));
     req.on("end", () => {
       hits.push({ url: req.url, auth: req.headers.authorization, body: JSON.parse(body || "{}") });
-      res.writeHead(nextStatus, { "Content-Type": "application/json" });
-      res.end("{}");
+      const meta = req.url.endsWith("/events");
+      res.writeHead(meta ? metaStatus : nextStatus, { "Content-Type": "application/json" });
+      res.end(meta ? metaReply : "{}");
     });
   });
   await new Promise(r => server.listen(0, "127.0.0.1", r));
@@ -20,13 +22,13 @@ before(async () => {
 });
 after(() => server.close());
 beforeEach(() => {
-  hits = []; nextStatus = 200;
-  for (const k of ["CHAKRA_API_KEY", "CHAKRA_WINTER_CAMPAIGN_ID", "CHAKRA_ATTR_EVENT", "CHAKRA_ATTR_TRIAL", "CHAKRA_ATTR_SOURCE", "REGISTER_FORWARD_URL", "CHAKRA_WINTER_CAMPAIGN_ID_48H", "CHAKRA_WINTER_CAMPAIGN_ID_24H"]) delete process.env[k];
+  hits = []; nextStatus = 200; metaStatus = 200; metaReply = "{}";
+  for (const k of ["CHAKRA_API_KEY", "CHAKRA_WINTER_CAMPAIGN_ID", "CHAKRA_ATTR_EVENT", "CHAKRA_ATTR_TRIAL", "CHAKRA_ATTR_SOURCE", "REGISTER_FORWARD_URL", "CHAKRA_WINTER_CAMPAIGN_ID_48H", "CHAKRA_WINTER_CAMPAIGN_ID_24H", "META_CAPI_TOKEN"]) delete process.env[k];
 });
 
-const call = (body, method = "POST") =>
+const call = (body, method = "POST", headers = {}) =>
   handler.fetch(new Request("http://x/api/register", {
-    method, headers: { "Content-Type": "application/json" },
+    method, headers: { "Content-Type": "application/json", ...headers },
     body: method === "POST" ? (typeof body === "string" ? body : JSON.stringify(body)) : undefined,
   }));
 const good = { first_name: " Amina ", email: "Amina@Example.com", whatsapp: "07700 900123", trial_interest: "Maybe", source: "meta" };
@@ -142,3 +144,100 @@ for (const [when, expected] of [["2026-12-01T10:00:00Z", "full"], ["2026-12-08T1
     assert.deepEqual(hits[1].body, { campaignId: expected, phoneNumber: "447700900123" });
   });
 }
+// --- Meta Conversions API. Calls to graph.facebook.com are pointed at the local fake server.
+const sha = v => createHash("sha256").update(v).digest("hex");
+const EVENT_ID = "3f1c2a9e-5b7d-4c1a-9e2f-000000000001";
+function withMeta(t) {
+  process.env.REGISTER_FORWARD_URL = `${base}/api/winter-register`;
+  process.env.META_CAPI_TOKEN = "test-meta-token";
+  const realFetch = globalThis.fetch;
+  t.after(() => (globalThis.fetch = realFetch));
+  globalThis.fetch = (url, init) => realFetch(String(url).replace("https://graph.facebook.com", base), init);
+}
+const metaHits = () => hits.filter(h => h.url.endsWith("/events"));
+
+test("reports a saved sign-up to Meta as a Lead, with hashed details and the page's event ID", async (t) => {
+  withMeta(t);
+  const res = await call({ ...good, event_id: EVENT_ID }, "POST", {
+    "user-agent": "TestBrowser/1.0", "x-real-ip": "203.0.113.7", referer: "https://ilmi-winter.app/?utm_source=meta",
+    cookie: "other=1; _fbp=fb.1.1700000000.123; _fbc=fb.1.1700000000.AbC",
+  });
+  assert.equal(res.status, 200);
+  assert.equal(metaHits().length, 1);
+  const hit = metaHits()[0];
+  assert.equal(hit.url, "/1004320156067073/events");
+  assert.equal(hit.body.access_token, "test-meta-token");
+  assert.equal(hit.auth, undefined);
+  const [ev] = hit.body.data;
+  assert.equal(hit.body.data.length, 1);
+  assert.equal(ev.event_name, "Lead");
+  assert.equal(ev.event_id, EVENT_ID);
+  assert.equal(ev.action_source, "website");
+  assert.equal(ev.event_source_url, "https://ilmi-winter.app/?utm_source=meta");
+  assert.ok(Math.abs(ev.event_time - Date.now() / 1000) < 60);
+  assert.deepEqual(ev.user_data, {
+    em: [sha("amina@example.com")], ph: [sha("447700900123")],
+    client_ip_address: "203.0.113.7", client_user_agent: "TestBrowser/1.0",
+    fbp: "fb.1.1700000000.123", fbc: "fb.1.1700000000.AbC",
+  });
+  // nothing personal leaves in the clear
+  const sent = JSON.stringify(hit.body);
+  for (const plain of ["amina@example.com", "Amina", "447700900123", "7700"]) assert.ok(!sent.includes(plain), plain);
+});
+
+test("the sign-up is saved before Meta is told", async (t) => {
+  withMeta(t);
+  await call({ ...good, event_id: EVENT_ID });
+  assert.deepEqual(hits.map(h => h.url), ["/api/winter-register", "/1004320156067073/events"]);
+});
+
+test("a sign-up still succeeds when Meta rejects the Lead, and the token is not logged", async (t) => {
+  withMeta(t);
+  metaStatus = 400;
+  metaReply = JSON.stringify({ error: { message: "Invalid OAuth access token test-meta-token", code: 190, error_subcode: 463 } });
+  const logged = [];
+  const realWarn = console.warn;
+  t.after(() => (console.warn = realWarn));
+  console.warn = (...a) => logged.push(a.join(" "));
+  assert.equal((await call({ ...good, event_id: EVENT_ID })).status, 200);
+  assert.equal(logged.length, 1);
+  assert.match(logged[0], /status 400, code 190, subcode 463/);
+  assert.ok(!logged[0].includes("test-meta-token"));
+  assert.ok(!logged[0].includes("OAuth"));
+});
+
+test("a sign-up still succeeds when Meta cannot be reached", async (t) => {
+  withMeta(t);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (url, init) => String(url).includes("/events") ? Promise.reject(new TypeError("fetch failed")) : realFetch(url, init);
+  const realWarn = console.warn;
+  t.after(() => (console.warn = realWarn));
+  console.warn = () => {};
+  assert.equal((await call({ ...good, event_id: EVENT_ID })).status, 200);
+});
+
+test("Meta is not told when the page sent no event ID, or a bad one", async (t) => {
+  withMeta(t);
+  await call(good);
+  await call({ ...good, event_id: "x" });
+  await call({ ...good, event_id: "has spaces and <tags>" });
+  assert.equal(metaHits().length, 0);
+  assert.equal(hits.length, 3);
+});
+
+test("Meta is not told when there is no token", async (t) => {
+  withMeta(t);
+  delete process.env.META_CAPI_TOKEN;
+  assert.equal((await call({ ...good, event_id: EVENT_ID })).status, 200);
+  assert.equal(metaHits().length, 0);
+});
+
+test("Meta is not told when the sign-up could not be saved, or for bots and bad input", async (t) => {
+  withMeta(t);
+  nextStatus = 502;
+  assert.equal((await call({ ...good, event_id: EVENT_ID })).status, 502);
+  nextStatus = 200;
+  await call({ ...good, event_id: EVENT_ID, website: "http://spam" });
+  await call({ ...good, event_id: EVENT_ID, email: "nope" });
+  assert.equal(metaHits().length, 0);
+});

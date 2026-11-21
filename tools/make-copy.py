@@ -71,7 +71,18 @@ rep("""  // Sign-ups go to our own endpoint, which passes them to Zapier -> Chak
 """  // Sign-ups go to our own endpoint, which saves them in Chakra (see api/register.js).
   registerUrl: "/api/register\"""")
 rep('/* send the sign-up to /api/winter-register (-> Zapier -> Chakra). Only show "You\'re in" once it\'s saved. */',
-    '/* send the sign-up to /api/register (-> Chakra). Only show "You\'re in" once it\'s saved. */')
+    """/* One ID per sign-up. The browser gives it to Meta with the Lead and the server does the same
+   (Conversions API), so Meta sees one sign-up, not two. */
+const leadId = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+  : Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+
+/* send the sign-up to /api/register (-> Chakra). Only show "You're in" once it's saved. */""")
+rep("""    website: $("website").value      // honeypot: real people leave this empty
+  };
+""", """    website: $("website").value,     // honeypot: real people leave this empty
+    event_id: leadId()               // see leadId above
+  };
+""")
 
 # --- Lead: the conversion the ads optimise for, only after the sign-up is saved
 rep("""      $("submitErr").hidden = false;
@@ -81,7 +92,7 @@ rep("""      $("submitErr").hidden = false;
 """, """      $("submitErr").hidden = false;
       return;
     }
-    if (window.fbq) fbq("track", "Lead", {content_name: "winter-webinar"});   // saved: count it for the ads
+    if (window.fbq) fbq("track", "Lead", {content_name: "winter-webinar"}, {eventID: data.event_id});   // saved: count it for the ads
   }
 """)
 
