@@ -29,7 +29,9 @@ The WhatsApp number has a country picker: one small box beside the number that s
 flag and dialling code (the real select lies invisibly over it, so phones open their own country list).
 Nothing is chosen at the start and choosing is required. The page adds the country's dialling code and checks the number against that country's rules, so the function always
 receives the number with its country code ("+44..."). A number that arrives without one is refused rather
-than guessed. If the checker file has not loaded, the page falls back to simpler checks so sign-ups never stop.
+than guessed. A country code typed into the number box is removed from it automatically: "+44" or "0044" as
+soon as it is typed (the picker switches to that country), and the chosen country's code typed again with no
+plus ("44 7561...") when the visitor leaves the box. A plain number is left exactly as typed. If the checker file has not loaded, the page falls back to simpler checks so sign-ups never stop.
 
 In Chakra, each campaign step's "To" must be set to "Phone Number (Lead)". Left empty, Chakra sends to the
 lead's linked contact, which a lead saved through the API does not have, and the message fails.

@@ -622,21 +622,51 @@ function pickCountry(iso, code){
   if (!dialOf(iso)) iso = MAIN[code] || (COUNTRIES.find(c => c[1] === String(code)) || [])[0];
   if (iso) { $("cc").value = iso; showDial(); }
 }
+/* A country code typed into the number box (+44..., 0044...) is taken out as soon as it is recognised and
+   the picker is set to that country, so the code only ever shows once: in the small box.
+   lifted remembers that a code has already been taken out of the number in the box;
+   last is the digits that were in the box when we last looked. */
+let lifted = false, last = "";
+const digitsOf = s => s.replace(/\D/g, "");
+function liftCode(){
+  const box = $("wa"), now = digitsOf(box.value);
+  if (box.value === "" || (now && !now.startsWith(last) && !last.startsWith(now))) lifted = false;   // emptied, or replaced by another number
+  const atEnd = box.selectionStart == null || box.selectionStart === box.value.length;   // typing forwards or pasting, not editing the middle
+  const m = atEnd && box.value.match(/^[\s(]*(?:\+|00)(.*)$/);
+  if (m) {
+    const rest = m[1], c = COUNTRIES.find(c => digitsOf(rest).startsWith(c[1]));
+    if (c) {                                          // a whole code: take it out
+      let i = 0;
+      for (let seen = 0; seen < c[1].length; i++) if (/\d/.test(rest[i])) seen++;
+      box.value = rest.slice(i); lifted = true;
+      if (dialOf($("cc").value) !== c[1]) pickCountry("", c[1]);   // keep a chosen country that has this code
+    }
+  }
+  if (atEnd && !/^[\s(]*(?:\+|00)/.test(box.value)) {   // no code in front: clear a stray space or dash, and the "(0)" of "+44 (0)7..."
+    const clean = box.value.replace(/^[\s).-]+/, "").replace(lifted ? /^\(0\)\s*(?=\d)/ : /^$/, "");
+    if (clean !== box.value) box.value = clean;
+  }
+  last = digitsOf(box.value);
+}
+$("wa").addEventListener("input", liftCode);
 /* Reads the picker and the number box. Gives back the full number with its country code
    ("+447700900123"), or "" when it does not make a real number for that country.
-   A number typed with its own code (+44... or 0044...) is taken as typed and sets the picker. */
+   A number typed with its own code (+44... or 0044...) is taken as typed and sets the picker.
+   With tidy, a code typed in the box is removed from it, because the code is already in the small box. */
 function waNumber(tidy){
   const raw = $("wa").value.trim(), typed = /^(\+|00)/.test(raw), iso = $("cc").value;
   if (!raw || (!typed && !iso)) return "";
   const text = typed ? raw.replace(/^00/, "+") : raw;
   if (window.libphonenumber) {
-    let p = null;
-    try { p = libphonenumber.parsePhoneNumberFromString(text, typed ? undefined : iso); } catch(e){}
+    const read = (t, c) => { try { return libphonenumber.parsePhoneNumberFromString(t, c); } catch(e){ return null; } };
+    const d = digitsOf(raw), code = dialOf(iso);
+    let p = read(text, typed ? undefined : iso);
+    /* the chosen country's own code typed again with no plus (49 151...): read it as the code when what is left is a real number */
+    if (!typed && !lifted && d.startsWith(code) && d[code.length] !== "0") { const q = read("+" + d); if (q && q.isValid() && q.countryCallingCode === code) p = q; }
     if (!p || !p.isValid()) return "";
-    if (typed) {
-      pickCountry(p.country, p.countryCallingCode);
-      if (tidy) $("wa").value = p.formatInternational().replace("+" + p.countryCallingCode, "").trim();
-    }
+    if (typed || (p.country && p.country !== iso)) pickCountry(p.country, p.countryCallingCode);
+    const coded = typed || (d.startsWith(p.countryCallingCode) && d.length > p.nationalNumber.length && d.endsWith(p.nationalNumber));   // a code was typed in the box
+    if (tidy && coded && dialOf($("cc").value) === p.countryCallingCode) { $("wa").value = p.formatInternational().replace("+" + p.countryCallingCode, "").trim(); lifted = true; last = digitsOf($("wa").value); }
     return p.number;
   }
   /* the checker has not loaded: simpler rules */
