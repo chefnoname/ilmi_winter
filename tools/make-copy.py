@@ -274,5 +274,50 @@ function validate(){
 rep(r"""    whatsapp: $("wa").value.trim(),""",
 r"""    whatsapp: waFull,                // country code + number, from the picker (see waNumber above)""")
 
+# ===== Completion screen: calendar and WhatsApp channel buttons removed (24 Nov 2026) =====
+# After a sign-up the "You're in" screen no longer shows Add to Google Calendar, Add to Apple or
+# Outlook calendar, or Join our WhatsApp channel. The code that only those buttons used goes with them.
+
+# --- styles: the row that held the three buttons
+rep(r""".thanks .row{display:grid;gap:10px}
+""",
+"")
+
+# --- the three buttons themselves
+rep(r"""        <div class="row">
+          <a class="btn btn-night" id="gcal" href="#" target="_blank" rel="noopener">Add to Google Calendar</a>
+          <button class="btn btn-ghost" type="button" id="ics">Add to Apple or Outlook calendar</button>
+          <a class="btn btn-ghost" id="waJoin" href="#" target="_blank" rel="noopener">Join our WhatsApp channel</a>
+        </div>
+""",
+"")
+
+# --- settings: this channel link was only used by the removed button
+rep(r"""  whatsappJoinUrl: "https://whatsapp.com/channel/0029Vb7X3MMD38CXUTOq4G1m",  // Ilmi WhatsApp channel (same link as in the Chakra confirmation)
+""",
+"")
+
+# --- settings: the page address is no longer used for calendar invites
+rep(r"""// this site, used in share links and calendar invites""",
+r"""// this site, used in share links""")
+
+# --- script: the invite text and date helper were only used by the calendar buttons
+rep(r"""const details = `Free live webinar with Ustadh Yasin Munye. The join link comes by WhatsApp on the day. ${CONFIG.pageUrl}`;
+const stamp = d => d.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
+""",
+"")
+
+# --- script: what the three buttons did
+rep(r"""$("gcal").href = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent(title) + "&dates=" + stamp(start) + "/" + stamp(end) + "&details=" + encodeURIComponent(details);
+$("ics").onclick = () => {
+  const ics = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Ilmi Online//Winter Webinar//EN","BEGIN:VEVENT","UID:winter-webinar-2026@ilmi.online","DTSTAMP:"+stamp(new Date()),"DTSTART:"+stamp(start),"DTEND:"+stamp(end),"SUMMARY:"+title,"DESCRIPTION:"+details,"BEGIN:VALARM","TRIGGER:-PT60M","ACTION:DISPLAY","DESCRIPTION:Webinar in 1 hour","END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));
+  a.download = "winter-before-ramadan.ics"; document.body.appendChild(a); a.click(); a.remove();
+};
+$("waJoin").href = CONFIG.whatsappJoinUrl;
+""",
+"")
+
 open(NEW, "w", encoding="utf-8").write(out)
 print("written", NEW, len(out.encode("utf-8")), "bytes")
