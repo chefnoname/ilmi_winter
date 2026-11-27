@@ -89,7 +89,9 @@ export function campaignFor(now, env) {
 /** Create/update the lead, then add them to the winter campaign (which sends the confirmation). */
 async function sendToChakra(p, env) {
   const key = env.CHAKRA_API_KEY;
-  const data = { name: p.first_name, phone_number: p.phone, email: p.email };
+  // "+" in front: without it Chakra's lead/process reads the number as a UK one, so +1/+61/+971... sign-ups
+  // were saved as +44<digits> and the campaign then made a second, nameless lead for the real number.
+  const data = { name: p.first_name, phone_number: `+${p.phone}`, email: p.email };
   if (env.CHAKRA_ATTR_EVENT) data[env.CHAKRA_ATTR_EVENT] = p.event;
   if (env.CHAKRA_ATTR_TRIAL && p.trial_interest) data[env.CHAKRA_ATTR_TRIAL] = p.trial_interest;
   if (env.CHAKRA_ATTR_SOURCE) data[env.CHAKRA_ATTR_SOURCE] = p.source;

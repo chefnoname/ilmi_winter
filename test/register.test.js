@@ -84,8 +84,22 @@ test("goes straight to Chakra when this project has its own key", async (t) => {
   assert.equal(res.status, 200);
   assert.deepEqual(hits.map(h => h.url), ["/v1/ext/procedure/lead/process", "/v1/ext/procedure/lead/add-phone-number-to-campaign"]);
   assert.equal(hits[0].auth, "Bearer test-key");
-  assert.deepEqual(hits[0].body, { data: { name: "Amina", phone_number: "447700900123", email: "amina@example.com", event: "winter-webinar-2026", trial_interest: "Maybe", source: "meta" } });
+  assert.deepEqual(hits[0].body, { data: { name: "Amina", phone_number: "+447700900123", email: "amina@example.com", event: "winter-webinar-2026", trial_interest: "Maybe", source: "meta" } });
   assert.deepEqual(hits[1].body, { campaignId: "camp-1", phoneNumber: "447700900123" });
+});
+
+test("an overseas number reaches Chakra with its own country code, not read as a UK number", async (t) => {
+  process.env.CHAKRA_API_KEY = "test-key";
+  process.env.CHAKRA_WINTER_CAMPAIGN_ID = "camp-1";
+  const realFetch = globalThis.fetch;
+  t.after(() => (globalThis.fetch = realFetch));
+  globalThis.fetch = (url, init) => realFetch(String(url).replace("https://api.chakrahq.com", base), init);
+  for (const [typed, digits] of [["+1 212 555 0100", "12125550100"], ["+61 412 345 678", "61412345678"], ["+971 50 123 4567", "971501234567"]]) {
+    hits = [];
+    assert.equal((await call({ ...good, whatsapp: typed })).status, 200);
+    assert.equal(hits[0].body.data.phone_number, "+" + digits);
+    assert.deepEqual(hits[1].body, { campaignId: "camp-1", phoneNumber: digits });
+  }
 });
 
 test("rejects bad input and sends nothing on", async () => {
