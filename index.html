@@ -84,6 +84,18 @@ body:not(.show-flags) .flag{display:none}
 .hero .wrap{padding-block:28px 40px;position:relative;z-index:1;display:flex;flex-direction:column;gap:18px}
 .logo{width:56px;height:56px;display:block}
 .logo-link{display:inline-block;border-radius:12px;transition:opacity .2s}.logo-link:hover{opacity:.85}.logo-link:focus-visible{outline:2px solid #9fd3ff;outline-offset:4px}
+/* the two buttons from the ilmi.online nav bar, in the same colours */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.navpills{display:flex;align-items:center;gap:8px;min-width:0}
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:600;white-space:nowrap;text-decoration:none;transition:background-color .2s,filter .2s}
+.pill:focus-visible{outline:2px solid #9fd3ff;outline-offset:3px}
+.pill-reward{background:#1D4436;color:#F6BA23;box-shadow:inset 0 0 0 1px rgba(246,186,35,.4)}
+.pill-reward:hover{background:#265947}
+.pill-learn{background:linear-gradient(135deg,#21D4A1 0%,#38CC56 35%,#E8CE3B 70%,#FFB029 100%);color:#fff}
+.pill-learn:hover{filter:brightness(1.05)}
+.pill-ic{flex:none}
+@media (max-width:429px){.pill-ic{display:none}.pill{height:34px;padding:0 10px;font-size:12px}.navpills{gap:6px}.topbar .logo{width:44px;height:44px}}
+@media (max-width:359px){.pill{padding:0 8px;font-size:11px}}
 .eyebrow{font-size:12.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ice)}
 .hero h1{font-size:clamp(34px,9.5vw,46px);font-weight:800;letter-spacing:-.02em}
 .hero h1 em{font-style:normal;color:var(--ice)}
@@ -295,7 +307,13 @@ details .ans{overflow:hidden}
   <div class="blob b1" aria-hidden="true"></div><div class="blob b2" aria-hidden="true"></div>
   <canvas class="snow" id="snow" aria-hidden="true"></canvas>
   <div class="wrap">
-    <a class="logo-link" href="/" aria-label="Ilmi Online home"><img class="logo" alt="" src="/images/ilmi-logo.svg" width="56" height="56"></a>
+    <div class="topbar">
+      <a class="logo-link" href="/" aria-label="Ilmi Online home"><img class="logo" alt="" src="/images/ilmi-logo.svg" width="56" height="56"></a>
+      <nav class="navpills" aria-label="Ilmi Online">
+        <a class="pill pill-reward" href="https://www.ilmi.online/share-the-reward?src=winter" target="_blank" rel="noopener"><svg class="pill-ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 14h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 16"/><path d="m7 20 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/><path d="m2 15 6 6"/><path d="M19.5 8.5c.7-.7 1.5-1.6 1.5-2.7A2.73 2.73 0 0 0 16 4a2.78 2.78 0 0 0-5 1.8c0 1.2.8 2 1.5 2.8L16 12Z"/></svg>Share the Reward</a>
+        <a class="pill pill-learn" href="https://www.ilmcourses.uk/login" target="_blank" rel="noopener">Start Learning</a>
+      </nav>
+    </div>
     <p class="eyebrow">Free live webinar with Ustadh Yasin Munye</p>
     <h1 id="headline"><span data-h="A">Your Ramadan starts <em>this winter.</em></span><span data-h="B" hidden>Short days to fast. <em>Long nights to pray.</em></span><span data-h="C" hidden>How the Salaf <u>Won</u> the Winter</span><span data-h="D" hidden class="rot" aria-live="off"><span class="on">Your Ramadan starts <u>this winter.</u></span><span aria-hidden="true">Short days to fast. <u>Long nights to pray.</u></span><span aria-hidden="true">How the Salaf <u>Won</u> the Winter</span></span></h1>
     <p class="promise" id="promise"><span data-h="A">Short days for fasting, long nights for prayer. Learn the 3 winter habits of the Salaf, and start the first one tomorrow.</span><span data-h="D" hidden>Short days for fasting, long nights for prayer. Learn the 3 winter habits of the Salaf, and start the first one tomorrow.</span><span data-h="C" hidden>Short days for fasting, long nights for prayer. Learn the 3 winter habits of the Salaf, and start the first one tomorrow before Ramadan arrives.</span><span data-h="B" hidden>The Salaf loved winter for a reason. Learn their 3 winter habits, and get to Ramadan already fasting and praying at night.</span></p>

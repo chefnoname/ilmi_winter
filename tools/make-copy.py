@@ -319,5 +319,35 @@ $("waJoin").href = CONFIG.whatsappJoinUrl;
 """,
 "")
 
+
+# --- 2026-11-27: the two ilmi.online nav buttons (Share the Reward, Start Learning) beside the logo
+rep(r"""    <a class="logo-link" href="/" aria-label="Ilmi Online home"><img class="logo" alt="" src="/images/ilmi-logo.svg" width="56" height="56"></a>
+""",
+r"""    <div class="topbar">
+      <a class="logo-link" href="/" aria-label="Ilmi Online home"><img class="logo" alt="" src="/images/ilmi-logo.svg" width="56" height="56"></a>
+      <nav class="navpills" aria-label="Ilmi Online">
+        <a class="pill pill-reward" href="https://www.ilmi.online/share-the-reward?src=winter" target="_blank" rel="noopener"><svg class="pill-ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 14h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 16"/><path d="m7 20 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/><path d="m2 15 6 6"/><path d="M19.5 8.5c.7-.7 1.5-1.6 1.5-2.7A2.73 2.73 0 0 0 16 4a2.78 2.78 0 0 0-5 1.8c0 1.2.8 2 1.5 2.8L16 12Z"/></svg>Share the Reward</a>
+        <a class="pill pill-learn" href="https://www.ilmcourses.uk/login" target="_blank" rel="noopener">Start Learning</a>
+      </nav>
+    </div>
+""")
+
+rep(r""".logo-link{display:inline-block;border-radius:12px;transition:opacity .2s}.logo-link:hover{opacity:.85}.logo-link:focus-visible{outline:2px solid #9fd3ff;outline-offset:4px}
+""",
+r""".logo-link{display:inline-block;border-radius:12px;transition:opacity .2s}.logo-link:hover{opacity:.85}.logo-link:focus-visible{outline:2px solid #9fd3ff;outline-offset:4px}
+/* the two buttons from the ilmi.online nav bar, in the same colours */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.navpills{display:flex;align-items:center;gap:8px;min-width:0}
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:600;white-space:nowrap;text-decoration:none;transition:background-color .2s,filter .2s}
+.pill:focus-visible{outline:2px solid #9fd3ff;outline-offset:3px}
+.pill-reward{background:#1D4436;color:#F6BA23;box-shadow:inset 0 0 0 1px rgba(246,186,35,.4)}
+.pill-reward:hover{background:#265947}
+.pill-learn{background:linear-gradient(135deg,#21D4A1 0%,#38CC56 35%,#E8CE3B 70%,#FFB029 100%);color:#fff}
+.pill-learn:hover{filter:brightness(1.05)}
+.pill-ic{flex:none}
+@media (max-width:429px){.pill-ic{display:none}.pill{height:34px;padding:0 10px;font-size:12px}.navpills{gap:6px}.topbar .logo{width:44px;height:44px}}
+@media (max-width:359px){.pill{padding:0 8px;font-size:11px}}
+""")
+
 open(NEW, "w", encoding="utf-8").write(out)
 print("written", NEW, len(out.encode("utf-8")), "bytes")
